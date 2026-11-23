@@ -91,13 +91,15 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS configuration for Vite frontend
+# CORS configuration - allows all origins (including any deployed Vercel frontend)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.parsed_cors_origins,
+    allow_origin_regex=".*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 

@@ -25,8 +25,8 @@ class Settings(BaseSettings):
     # Neon PostgreSQL — single connection URL
     database_url: str = "postgresql+psycopg://AGENT_RW_USER:YOUR_PASSWORD@YOUR_NEON_POOLER_HOST/YOUR_DATABASE?sslmode=require"
 
-    # CORS Configuration — comma-separated allowed origins or '*'
-    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+    # CORS Configuration — comma-separated allowed origins or '*' (defaults to '*' to allow any deployment origin)
+    cors_origins: str = "*"
 
     # Data Mode Policy: "PRODUCTION" (real production/baseline only) or "DEMO" (real + synthetic benchmarks)
     data_mode: str = "PRODUCTION"
