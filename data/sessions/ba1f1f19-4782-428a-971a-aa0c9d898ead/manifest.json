@@ -1,0 +1,31 @@
+{
+  "session_id": "ba1f1f19-4782-428a-971a-aa0c9d898ead",
+  "created_at": 1795172660.1568549,
+  "data_origin": "SYNTHETIC_TEST",
+  "dataset_count": 7,
+  "datasets": [
+    "MANUFACTURING_COST",
+    "PRODUCTION_ORDERS",
+    "HOURLY_PRODUCTION",
+    "QUALITY_INSPECTION",
+    "MATERIAL_CONSUMPTION",
+    "MATERIAL_PURCHASE",
+    "BOM_COMPONENT"
+  ],
+  "metadata": {
+    "inspection_id": "insp_0e1e54044806",
+    "primary_filename": "09_manufacturing_cost.csv",
+    "uploaded_files": [
+      "01_production_orders.csv",
+      "02_production_runs.csv",
+      "03_quality_inspection.csv",
+      "04_material_consumption.csv",
+      "05_procurement_supplier.csv",
+      "06_inventory_transactions.csv",
+      "07_equipment_downtime_energy.csv",
+      "08_workforce_attendance.csv",
+      "09_manufacturing_cost.csv"
+    ],
+    "status": "VALIDATED"
+  }
+}

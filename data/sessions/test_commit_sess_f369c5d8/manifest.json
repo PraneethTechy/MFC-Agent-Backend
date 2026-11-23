@@ -1,0 +1,11 @@
+{
+  "session_id": "test_commit_sess_f369c5d8",
+  "created_at": 1795243103.91477,
+  "data_origin": "SYNTHETIC_TEST",
+  "dataset_count": 2,
+  "datasets": [
+    "MANUFACTURING_COST",
+    "HOURLY_PRODUCTION"
+  ],
+  "metadata": {}
+}

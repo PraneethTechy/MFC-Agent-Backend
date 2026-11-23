@@ -1,0 +1,1 @@
+{"record_count": 50, "provenance": "SYNTHETIC_GENERATED", "rows": [{"event_date": "2026-10-15", "plant_code": "IN-TN-01", "product_code": "SPH-MODEL-X", "line_id": "Line-2", "actual_qty": 450, "target_qty": 500, "good_qty": 420, "scrap_qty": 30, "downtime_min": 45}]}

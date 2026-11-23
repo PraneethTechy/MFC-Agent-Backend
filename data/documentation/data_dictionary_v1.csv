@@ -1,0 +1,166 @@
+file,column,data_type,key_status,business_meaning
+d5_production_order_v1.csv,production_order_id,string,PK,Generated unique production order key PORD-<plant>-<seq>; NOT the source PO number
+d5_production_order_v1.csv,order_context_key,string,AK,Natural key source PO|plant|product; unique; basis for order grouping
+d5_production_order_v1.csv,source_po_number,string,,Source PO value (PO-000001..450). Reused across plants/lines/products and over time; never a key
+d5_production_order_v1.csv,plant_id,string,,"Plant from hourly source (IN-TN-01, IN-KA-01)"
+d5_production_order_v1.csv,product_id,string,,Product from hourly source; must exist in BOM
+d5_production_order_v1.csv,bom_id,string,,BOM header for product (REV-C) from BOM source
+d5_production_order_v1.csv,bom_revision,string,,BOM revision from source (only REV-C)
+d5_production_order_v1.csv,planned_qty,int,,GENERATED RULE: max planned_qty across the order's runs (run plans are sums of source hourly target_qty)
+d5_production_order_v1.csv,actual_qty,int,,"Actual units of the completion-basis run (FAL run if present, else SMT run)"
+d5_production_order_v1.csv,good_qty,int,,Good units of the completion-basis run
+d5_production_order_v1.csv,reject_qty,int,,"Reject units of the completion-basis run (source hourly, not reconciled to inspection)"
+d5_production_order_v1.csv,rework_qty,int,,"Rework units of the completion-basis run (source hourly, not reconciled to inspection)"
+d5_production_order_v1.csv,completion_basis_run_id,string,FK,production_run_id whose quantities populate order actuals
+d5_production_order_v1.csv,completion_basis,string,,FAL_RUN or SMT_RUN_ONLY_NO_FAL_OBSERVED
+d5_production_order_v1.csv,run_count,int,,Number of runs under the order (1 or 2)
+d5_production_order_v1.csv,routing_completeness,string,,"FULL_SMT_FAL, SMT_ONLY or FAL_ONLY as observed in hourly source"
+d5_production_order_v1.csv,planned_start_ts,timestamp,,Earliest planned run start (first source hourly slot start)
+d5_production_order_v1.csv,planned_end_ts,timestamp,,Latest planned run end (last source hourly slot start + 1h)
+d5_production_order_v1.csv,actual_start_ts,timestamp,,Earliest first producing slot start; null if no output
+d5_production_order_v1.csv,actual_end_ts,timestamp,,Latest producing slot start + run_minutes; null if no output
+d5_production_order_v1.csv,first_production_date,date,,Earliest source shift_production_date (may be 2026-07-31 for shift C)
+d5_production_order_v1.csv,last_production_date,date,,Latest source shift_production_date
+d5_production_order_v1.csv,calendar_span_days,int,,Whole days between planned start and planned end
+d5_production_order_v1.csv,order_status,string,,"COMPLETED / SHORT_CLOSED / NO_OUTPUT (basis run, FULL routing) or PARTIAL_ROUTING_OBSERVED"
+d5_production_order_v1.csv,schedule_ref,string,,Generated schedule slot reference SCH-<plant>-<line>-<date>-<shift> (non-unique reference)
+d5_production_order_v1.csv,source_po_traceability_status,string,,Carried from hourly source: AMBIGUOUS_MULTI_CONTEXT
+d5_production_order_v1.csv,order_integrity_flag,string,,"NONE or pipe list: SPARSE_MULTI_WEEK_SPAN (>14 days), PARTIAL_ROUTING"
+d5_production_order_v1.csv,record_origin,string,,GENERATED_SYNTHETIC
+d5_production_order_v1.csv,generation_version,string,,Generation run id
+d5_production_run_v1.csv,production_run_id,string,PK,Generated unique run key PRUN-nnnnn
+d5_production_run_v1.csv,production_order_id,string,FK,Parent order (exactly one) -> d5_production_order_v1
+d5_production_run_v1.csv,source_production_run_key,string,AK,Hourly source production_run_key PO|plant|line|product; unique
+d5_production_run_v1.csv,source_po_number,string,,Source PO value (not unique)
+d5_production_run_v1.csv,plant_id,string,,Plant
+d5_production_run_v1.csv,line_id,string,,Line (SMT-L1/FAL-L1 at IN-TN-01; SMT-L2/FAL-L2 at IN-KA-01)
+d5_production_run_v1.csv,line_type,string,,SMT or FAL from hourly source
+d5_production_run_v1.csv,product_id,string,,Product
+d5_production_run_v1.csv,shift_id_first,string,,Shift (A/B/C) of the first slot
+d5_production_run_v1.csv,shift_ids_covered,string,,Pipe list of all shifts touched
+d5_production_run_v1.csv,shift_count,int,,Distinct shifts touched
+d5_production_run_v1.csv,production_date_first,date,,Earliest source shift_production_date
+d5_production_run_v1.csv,production_date_last,date,,Latest source shift_production_date
+d5_production_run_v1.csv,planned_qty,int,,Sum of hourly target_qty of the run's slots
+d5_production_run_v1.csv,actual_qty,int,,Sum of hourly actual_qty
+d5_production_run_v1.csv,good_qty,int,,Sum of hourly good_qty
+d5_production_run_v1.csv,reject_qty,int,,Sum of hourly reject_qty
+d5_production_run_v1.csv,rework_qty,int,,Sum of hourly rework_qty
+d5_production_run_v1.csv,attainment_pct,float,,actual/planned x100; null if planned=0
+d5_production_run_v1.csv,planned_start_ts,timestamp,,First slot start
+d5_production_run_v1.csv,planned_end_ts,timestamp,,Last slot start + 1h
+d5_production_run_v1.csv,actual_start_ts,timestamp,,First producing slot start; null if NO_OUTPUT
+d5_production_run_v1.csv,actual_end_ts,timestamp,,Last producing slot start + run_minutes; null if NO_OUTPUT
+d5_production_run_v1.csv,slot_count,int,,Number of hourly rows linked
+d5_production_run_v1.csv,producing_slot_count,int,,Linked slots with actual_qty>0
+d5_production_run_v1.csv,zero_output_slot_count,int,,Linked slots with actual_qty=0
+d5_production_run_v1.csv,downtime_min_total,int,,Sum of hourly downtime_min
+d5_production_run_v1.csv,calendar_span_hours,int,,planned_end - planned_start in hours
+d5_production_run_v1.csv,max_idle_gap_hours,int,,Largest gap (hours) between consecutive slots of the run
+d5_production_run_v1.csv,execution_pattern,string,,"SINGLE_SLOT, CONTIGUOUS_SLOTS or SPARSE_NON_CONTIGUOUS"
+d5_production_run_v1.csv,run_status,string,,"COMPLETED (>=95% of plan), SHORT_CLOSED, NO_OUTPUT"
+d5_production_run_v1.csv,schedule_ref,string,,Generated schedule slot reference (non-unique)
+d5_production_run_v1.csv,mes_execution_ref,string,,MES:<first event_id>..<last event_id> source reference range
+d5_production_run_v1.csv,first_source_event_id,string,FK,First linked hourly event_id
+d5_production_run_v1.csv,last_source_event_id,string,FK,Last linked hourly event_id
+d5_production_run_v1.csv,source_suspicious_slot_count,int,,Linked slots whose source data_quality = SUSPICIOUS
+d5_production_run_v1.csv,hourly_link_status,string,,CONFIRMED (lineage only; see link table caveat)
+d5_production_run_v1.csv,candidate_cost_record_count,int,,Cost records candidate-linked (CANDIDATE_ONLY) to this run's slots
+d5_production_run_v1.csv,record_origin,string,,GENERATED_SYNTHETIC
+d5_production_run_v1.csv,generation_version,string,,Generation run id
+d5_run_source_link_v1.csv,link_id,string,PK,Generated link key LNK-nnnnnnn
+d5_run_source_link_v1.csv,production_run_id,string,FK,Run -> d5_production_run_v1
+d5_run_source_link_v1.csv,production_order_id,string,FK,Order -> d5_production_order_v1
+d5_run_source_link_v1.csv,source_table,string,,Source file the record comes from (hourly or cost)
+d5_run_source_link_v1.csv,source_record_id,string,FK,event_id (hourly) or cost_record_id (cost) in the source file
+d5_run_source_link_v1.csv,matched_hourly_event_id,string,FK,Hourly event_id of the slot; equals source_record_id for hourly rows
+d5_run_source_link_v1.csv,source_slot_ts,timestamp,,Source event_ts / posting_ts
+d5_run_source_link_v1.csv,plant_id,string,,Source plant
+d5_run_source_link_v1.csv,line_id,string,,Source line
+d5_run_source_link_v1.csv,source_po_number,string,,Source PO value (not unique)
+d5_run_source_link_v1.csv,link_rule_id,string,,R1_HOURLY_FULLKEY or R2_COST_TO_HOURLY_SLOT
+d5_run_source_link_v1.csv,link_status,string,,CONFIRMED / CANDIDATE_ONLY / UNMATCHED
+d5_run_source_link_v1.csv,evidence_strength,string,,Description of attribute agreement
+d5_run_source_link_v1.csv,match_slot_plant_line_po,string,,Y if slot ts+plant+line+PO matched
+d5_run_source_link_v1.csv,match_product,string,,Y/N product agreement
+d5_run_source_link_v1.csv,match_qty,string,,Y/N produced_qty = actual_qty (cost rows); NA for hourly
+d5_run_source_link_v1.csv,source_dq_status,string,,Source data quality label of the linked row
+d5_run_source_link_v1.csv,business_validity_caveat,string,,Why the status is not a business-validated link
+d5_run_source_link_v1.csv,record_origin,string,,GENERATED_SYNTHETIC
+d5_run_source_link_v1.csv,generation_version,string,,Generation run id
+d6_material_issue_consumption_v1.csv,material_issue_id,string,PK,Generated issue line key MI-nnnnnnn
+d6_material_issue_consumption_v1.csv,production_order_id,string,FK,Order -> d5_production_order_v1
+d6_material_issue_consumption_v1.csv,production_run_id,string,FK,Run -> d5_production_run_v1
+d6_material_issue_consumption_v1.csv,source_hourly_event_id,string,FK,Hourly slot the kit supports -> fact_hourly_production event_id
+d6_material_issue_consumption_v1.csv,plant_id,string,,Plant of issue
+d6_material_issue_consumption_v1.csv,storage_location_id,string,,RM-SMT (SMT components) or RM-FAL (final assembly components); assumption
+d6_material_issue_consumption_v1.csv,line_id,string,,Consuming line
+d6_material_issue_consumption_v1.csv,product_id,string,,Product built
+d6_material_issue_consumption_v1.csv,material_id,string,FK,Component -> fact_bom_component material_id
+d6_material_issue_consumption_v1.csv,bom_id,string,FK,BOM header -> fact_bom_component bom_id
+d6_material_issue_consumption_v1.csv,bom_revision,string,,BOM revision (REV-C) from BOM
+d6_material_issue_consumption_v1.csv,material_batch_id,string,,Generated lot reference (no supplier lot)
+d6_material_issue_consumption_v1.csv,transaction_type,string,,INITIAL_ISSUE (kit for slot target) or TOP_UP_ISSUE (when consumption exceeded kit)
+d6_material_issue_consumption_v1.csv,issue_ts,timestamp,,Issue posting time (15-50 min before slot start; top-up 20-45 min after)
+d6_material_issue_consumption_v1.csv,return_ts,timestamp,,Return posting time; null if nothing returned
+d6_material_issue_consumption_v1.csv,return_ts_basis,string,,"NORMAL, PERIOD_END_CLAMP (slot ended after 2026-10-31 23:59:59), NA_NO_RETURN"
+d6_material_issue_consumption_v1.csv,uom,string,,EA (BOM has no UOM; qty-per-unit of 1 supports each)
+d6_material_issue_consumption_v1.csv,units_started_qty,int,,Slot actual_qty (units started incl. rejects); basis for theoretical need
+d6_material_issue_consumption_v1.csv,bom_component_qty_per_unit,int,,"Theoretical BOM qty per unit (source, unchanged)"
+d6_material_issue_consumption_v1.csv,bom_scrap_factor,float,,"BOM scrap factor (source, unchanged)"
+d6_material_issue_consumption_v1.csv,theoretical_bom_qty,float,,"units x BOM qty, allocated pro-rata to consumed_qty if the slot-material has several lines"
+d6_material_issue_consumption_v1.csv,theoretical_qty_with_scrap,float,,"units x BOM qty x (1+scrap), allocated the same way. THEORETICAL, not actual"
+d6_material_issue_consumption_v1.csv,issued_qty,int,,Quantity issued on this line (one batch)
+d6_material_issue_consumption_v1.csv,returned_qty,int,,Unused quantity returned to stock
+d6_material_issue_consumption_v1.csv,consumed_qty,int,,Actual consumption = issued - returned (includes scrapped_qty)
+d6_material_issue_consumption_v1.csv,scrapped_qty,int,,Portion of consumed_qty lost as material scrap/damage
+d6_material_issue_consumption_v1.csv,net_consumed_qty,int,,consumed - scrapped (material that went into units)
+d6_material_issue_consumption_v1.csv,variance_vs_theoretical_qty,float,,consumed_qty - theoretical_qty_with_scrap
+d6_material_issue_consumption_v1.csv,variance_pct,float,,variance / theoretical_qty_with_scrap x100
+d6_material_issue_consumption_v1.csv,unit_value_inr,float,,Generated lot unit value (standard price x lot variance)
+d6_material_issue_consumption_v1.csv,consumed_value_inr,float,,consumed_qty x unit_value_inr
+d6_material_issue_consumption_v1.csv,scrapped_value_inr,float,,scrapped_qty x unit_value_inr
+d6_material_issue_consumption_v1.csv,issue_status,string,,CLOSED_FULLY_CONSUMED / CLOSED_PARTIAL_RETURN / CLOSED_FULL_RETURN
+d6_material_issue_consumption_v1.csv,reconciliation_check,string,,OK if issued = returned + consumed
+d6_material_issue_consumption_v1.csv,inventory_issue_txn_id,string,FK,Matching PRODUCTION_ISSUE row in d7
+d6_material_issue_consumption_v1.csv,inventory_return_txn_id,string,FK,Matching PRODUCTION_RETURN row in d7; null if no return
+d6_material_issue_consumption_v1.csv,order_run_link_status,string,,CONFIRMED (generated FK)
+d6_material_issue_consumption_v1.csv,hourly_slot_link_status,string,,CONFIRMED (lineage by construction)
+d6_material_issue_consumption_v1.csv,bom_link_status,string,,CONFIRMED product+material pair exists in BOM REV-C
+d6_material_issue_consumption_v1.csv,cost_link_status,string,,"CANDIDATE_ONLY if the slot has a cost record, else UNMATCHED"
+d6_material_issue_consumption_v1.csv,candidate_cost_record_id,string,FK,Candidate cost record for the slot; unvalidated
+d6_material_issue_consumption_v1.csv,bom_structure_confirmation_status,string,,UNCONFIRMED_IDENTICAL_STRUCTURE_ACROSS_PRODUCTS (source limitation carried forward)
+d6_material_issue_consumption_v1.csv,stage_assignment_basis,string,,ASSUMED_SMT_FAL_MAP_NOT_IN_BOM
+d6_material_issue_consumption_v1.csv,record_origin,string,,GENERATED_SYNTHETIC
+d6_material_issue_consumption_v1.csv,generation_version,string,,Generation run id
+d7_inventory_transactions_v1.csv,inventory_txn_id,string,PK,Generated key INV-nnnnnnn
+d7_inventory_transactions_v1.csv,ledger_seq,int,AK,"Order of posting within (plant, material); with plant+material unique"
+d7_inventory_transactions_v1.csv,plant_id,string,,Plant
+d7_inventory_transactions_v1.csv,storage_location_id,string,,RM-SMT or RM-FAL (one per material per plant)
+d7_inventory_transactions_v1.csv,material_id,string,FK,Component -> fact_bom_component material_id
+d7_inventory_transactions_v1.csv,material_batch_id,string,,Generated lot reference (not a supplier lot)
+d7_inventory_transactions_v1.csv,transaction_ts,timestamp,,Posting timestamp
+d7_inventory_transactions_v1.csv,transaction_date,date,,Posting date
+d7_inventory_transactions_v1.csv,transaction_type,string,,"OPENING_BALANCE, GOODS_RECEIPT, PRODUCTION_ISSUE, PRODUCTION_RETURN, INVENTORY_ADJUSTMENT, TRANSFER_OUT, TRANSFER_IN"
+d7_inventory_transactions_v1.csv,transaction_subtype,string,,"e.g. GENERATED_OPENING, STANDARD_GENERATED, TO_PRODUCTION_RUN, UNUSED_TO_STOCK, ADJ_GAIN, ADJ_LOSS, INTER_PLANT"
+d7_inventory_transactions_v1.csv,reference_doc_type,string,,"Reference document class (MATERIAL_ISSUE, GENERATED_RECEIPT, ...)"
+d7_inventory_transactions_v1.csv,reference_id,string,,material_issue_id for issue/return; generated GR/OB/CC/STO number otherwise
+d7_inventory_transactions_v1.csv,related_material_issue_id,string,FK,D6 line for issue/return rows; null otherwise
+d7_inventory_transactions_v1.csv,related_production_order_id,string,FK,Order for issue/return rows
+d7_inventory_transactions_v1.csv,related_production_run_id,string,FK,Run for issue/return rows
+d7_inventory_transactions_v1.csv,counterpart_inventory_txn_id,string,FK,Paired transfer row (OUT<->IN)
+d7_inventory_transactions_v1.csv,qty_in,int,,Quantity added to stock
+d7_inventory_transactions_v1.csv,qty_out,int,,Quantity removed from stock
+d7_inventory_transactions_v1.csv,net_qty,int,,qty_in - qty_out
+d7_inventory_transactions_v1.csv,uom,string,,EA
+d7_inventory_transactions_v1.csv,unit_value_inr,float,,"Lot unit value (GENERATED, not actual purchase price)"
+d7_inventory_transactions_v1.csv,valuation_basis,string,,GENERATED_STANDARD_PRICE_x_LOT_VARIANCE
+d7_inventory_transactions_v1.csv,line_value_inr,float,,net_qty x unit_value_inr
+d7_inventory_transactions_v1.csv,running_balance_batch_qty,int,,Stock of this batch at plant after the row
+d7_inventory_transactions_v1.csv,running_balance_material_qty,int,,Stock of this material at plant after the row
+d7_inventory_transactions_v1.csv,transaction_status,string,,POSTED
+d7_inventory_transactions_v1.csv,negative_stock_flag,string,,Y if either running balance < 0 (none expected)
+d7_inventory_transactions_v1.csv,traceability_status,string,,"CONFIRMED for issue/return (traced to D6), else NOT_APPLICABLE"
+d7_inventory_transactions_v1.csv,supplier_receipt_link_status,string,,UNMATCHED_SUPPLIER_DATASET_NOT_AVAILABLE for receipts/opening; else NOT_APPLICABLE
+d7_inventory_transactions_v1.csv,record_origin,string,,"GENERATED_OPENING_BALANCE for opening rows, GENERATED_SYNTHETIC otherwise"
+d7_inventory_transactions_v1.csv,generation_version,string,,Generation run id

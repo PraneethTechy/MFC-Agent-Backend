@@ -1,0 +1,80 @@
+key_type,table,columns,references_table,references_column,relationship_status,note
+PK,d8_supplier_master_v1,supplier_id,,,,Unique generated key
+PK,d8_supplier_material_source_list_v1,source_list_id,,,,Unique generated key
+PK,d8_po_header_v1,po_id,,,,Unique generated key
+PK,d8_po_line_v1,po_line_id,,,,Unique generated key
+PK,d8_goods_receipt_v1,gr_id,,,,Unique generated key
+PK,d8_supplier_quality_v1,quality_id,,,,Unique generated key
+PK,d9_equipment_master_v1,equipment_id,,,,Unique generated key
+PK,d9_equipment_event_v1,event_id,,,,Unique generated key
+PK,d9_energy_reading_shift_v1,reading_id,,,,Unique generated key
+PK,d9_maintenance_event_v1,maintenance_id,,,,Unique generated key
+PK,d9_event_hourly_candidate_link_v1,link_id,,,,Unique generated key
+PK,d10_shift_definition_v1,shift_id,,,,Unique generated key
+PK,d10_employee_master_v1,employee_id,,,,Unique generated key
+PK,d10_shift_assignment_v1,shift_assignment_id,,,,Unique generated key
+PK,d10_line_allocation_v1,allocation_id,,,,Unique generated key
+PK,d10_attendance_v1,attendance_id,,,,Unique generated key
+PK,d10_line_shift_labour_daily_v1,labour_day_id,,,,Unique generated key
+AK,d8_goods_receipt_v1,inventory_txn_id,,,,Unique alternate/natural key
+AK,d9_energy_reading_shift_v1,equipment_id+shift_production_date+shift_id,,,,Unique alternate/natural key
+AK,d10_attendance_v1,employee_id+attendance_date,,,,Unique alternate/natural key
+AK,d9_equipment_master_v1,energy_meter_id,,,,Unique alternate/natural key
+AK,d8_po_line_v1,po_id+line_number,,,,Unique alternate/natural key
+AK,d10_line_shift_labour_daily_v1,shift_production_date+plant_id+line_id+shift_id,,,,Unique alternate/natural key
+FK,d8_supplier_material_source_list_v1,supplier_id,d8_supplier_master_v1,supplier_id,INTERNAL,"Many : 1, validated, 0 invalid"
+FK (external),d8_supplier_material_source_list_v1,material_id,fact_bom_component_enhanced_v1,material_id,CONFIRMED,"Identifier validated, 0 invalid"
+FK,d8_po_header_v1,supplier_id,d8_supplier_master_v1,supplier_id,INTERNAL,"Many : 1, validated, 0 invalid"
+FK,d8_po_line_v1,po_id,d8_po_header_v1,po_id,INTERNAL,"Many : 1, validated, 0 invalid"
+FK,d8_po_line_v1,supplier_id,d8_supplier_master_v1,supplier_id,INTERNAL,"Many : 1, validated, 0 invalid"
+FK (external),d8_po_line_v1,material_id,fact_bom_component_enhanced_v1,material_id,CONFIRMED,"Identifier validated, 0 invalid"
+FK (external),d8_po_line_v1,material_id,d7_inventory_transactions_v1,material_id,CONFIRMED,"Identifier validated, 0 invalid"
+FK,d8_goods_receipt_v1,po_line_id,d8_po_line_v1,po_line_id,INTERNAL,"Many : 1, validated, 0 invalid"
+FK,d8_goods_receipt_v1,po_id,d8_po_header_v1,po_id,INTERNAL,"Many : 1, validated, 0 invalid"
+FK (external),d8_goods_receipt_v1,inventory_txn_id,d7_inventory_transactions_v1 (transaction_type=GOODS_RECEIPT),inventory_txn_id,CONFIRMED,"Identifier validated, 0 invalid"
+FK,d8_goods_receipt_v1,supplier_id,d8_supplier_master_v1,supplier_id,INTERNAL,"Many : 1, validated, 0 invalid"
+FK (external),d8_goods_receipt_v1,material_id,fact_bom_component_enhanced_v1,material_id,CONFIRMED,"Identifier validated, 0 invalid"
+FK (external),d8_goods_receipt_v1,plant_id,fact_hourly_production_enhanced_v1,plant_id,CONFIRMED,"Identifier validated, 0 invalid"
+FK,d8_supplier_quality_v1,gr_id,d8_goods_receipt_v1,gr_id,INTERNAL,"Many : 1, validated, 0 invalid"
+FK,d9_equipment_event_v1,equipment_id,d9_equipment_master_v1,equipment_id,INTERNAL,"Many : 1, validated, 0 invalid"
+FK,d9_equipment_event_v1,maintenance_id,d9_maintenance_event_v1,maintenance_id,INTERNAL,"Many : 1, validated, 0 invalid"
+FK,d9_energy_reading_shift_v1,equipment_id,d9_equipment_master_v1,equipment_id,INTERNAL,"Many : 1, validated, 0 invalid"
+FK,d9_energy_reading_shift_v1,energy_meter_id,d9_equipment_master_v1,energy_meter_id,INTERNAL,"Many : 1, validated, 0 invalid"
+FK,d9_maintenance_event_v1,equipment_id,d9_equipment_master_v1,equipment_id,INTERNAL,"Many : 1, validated, 0 invalid"
+FK,d9_maintenance_event_v1,linked_downtime_event_id,d9_equipment_event_v1,event_id,INTERNAL,"Many : 1, validated, 0 invalid"
+FK,d9_event_hourly_candidate_link_v1,equipment_event_id,d9_equipment_event_v1,event_id,INTERNAL,"Many : 1, validated, 0 invalid"
+FK (external),d9_event_hourly_candidate_link_v1,hourly_event_id,fact_hourly_production_enhanced_v1,event_id,CONFIRMED,"Identifier validated, 0 invalid"
+FK (external),d9_equipment_master_v1,line_id,fact_hourly_production_enhanced_v1,line_id,CONFIRMED,"Identifier validated, 0 invalid"
+FK,d10_shift_assignment_v1,employee_id,d10_employee_master_v1,employee_id,INTERNAL,"Many : 1, validated, 0 invalid"
+FK,d10_shift_assignment_v1,shift_id,d10_shift_definition_v1,shift_id,INTERNAL,"Many : 1, validated, 0 invalid"
+FK (external),d10_shift_assignment_v1,shift_id,fact_hourly_production_enhanced_v1,shift_id,CONFIRMED,"Identifier validated, 0 invalid"
+FK,d10_line_allocation_v1,employee_id,d10_employee_master_v1,employee_id,INTERNAL,"Many : 1, validated, 0 invalid"
+FK,d10_line_allocation_v1,shift_assignment_id,d10_shift_assignment_v1,shift_assignment_id,INTERNAL,"Many : 1, validated, 0 invalid"
+FK,d10_line_allocation_v1,supervisor_employee_id,d10_employee_master_v1,employee_id,INTERNAL,"Many : 1, validated, 0 invalid"
+FK (external),d10_line_allocation_v1,line_id,fact_hourly_production_enhanced_v1,line_id,CONFIRMED,"Identifier validated, 0 invalid"
+FK,d10_attendance_v1,employee_id,d10_employee_master_v1,employee_id,INTERNAL,"Many : 1, validated, 0 invalid"
+FK,d10_attendance_v1,shift_id,d10_shift_definition_v1,shift_id,INTERNAL,"Many : 1, validated, 0 invalid"
+FK,d10_attendance_v1,supervisor_employee_id,d10_employee_master_v1,employee_id,INTERNAL,"Many : 1, validated, 0 invalid"
+FK (external),d10_attendance_v1,line_id,fact_hourly_production_enhanced_v1,line_id,CONFIRMED,"Identifier validated, 0 invalid"
+FK (external),d10_line_shift_labour_daily_v1,line_id,fact_hourly_production_enhanced_v1,line_id,CONFIRMED,"Identifier validated, 0 invalid"
+RELATIONSHIP_CLASS,D8 GR -> D7 GOODS_RECEIPT,d8_goods_receipt.inventory_txn_id -> d7_inventory_transactions.inventory_txn_id,,,CONFIRMED,346 rows/keys. Exact txn id + plant/sloc/material/batch/date/qty match; both sides synthetic
+RELATIONSHIP_CLASS,D7 GOODS_RECEIPT without D8 GR,d7 GR rows,,,UNMATCHED,0 rows/keys. none expected
+RELATIONSHIP_CLASS,D7 OPENING_BALANCE -> supplier,d7 opening lots,,,UNMATCHED,64 rows/keys. Opening stock predates PO window; no supplier/PO claimed
+RELATIONSHIP_CLASS,D8 material -> BOM / D7 material,material_id,,,CONFIRMED,"348 rows/keys. All 16 BOM materials present in sources, PO lines, GR"
+RELATIONSHIP_CLASS,D8 plant -> existing plant,plant_id,,,CONFIRMED,"260 rows/keys. IN-KA-01, IN-TN-01"
+RELATIONSHIP_CLASS,D8 supplier -> real source supplier,supplier_id,,,UNMATCHED,15 rows/keys. No source supplier data exists; all suppliers SYNTHETIC
+RELATIONSHIP_CLASS,D8 purchase PO -> production PO (source_po_number),po_id,,,UNMATCHED,260 rows/keys. Different concept; production PO numbers are not unique and are not used
+RELATIONSHIP_CLASS,D9 equipment -> existing plant/line,equipment.plant_id+line_id -> hourly,,,CONFIRMED,32 rows/keys. Pair exists in hourly feed
+RELATIONSHIP_CLASS,D9 equipment -> station (source),equipment.station_id -> quality.station_id,,,CANDIDATE_ONLY,28 rows/keys. Source stations appear on every line; not line-specific
+RELATIONSHIP_CLASS,D9 equipment -> station (no source station),equipment.station_id null,,,UNMATCHED,4 rows/keys. Assembly robot and laminator have no source station
+RELATIONSHIP_CLASS,D9 equipment event -> hourly downtime slot,link table,,,CANDIDATE_ONLY,252 rows/keys. Same line + hour overlap + equal reason category; not confirmed
+RELATIONSHIP_CLASS,D9 equipment event -> hourly (no compatible slot),events,,,UNMATCHED,2235 rows/keys. Includes PM/calibration/idle with no hourly category
+RELATIONSHIP_CLASS,D9 energy -> manufacturing cost energy_cost_inr,n/a,,,UNMATCHED,8864 rows/keys. Different scope/grain; informational comparison only
+RELATIONSHIP_CLASS,D10 shift_id -> hourly shift_id,shift_definition.shift_id,,,CONFIRMED,3 rows/keys. A/B/C and hour windows validated
+RELATIONSHIP_CLASS,D10 allocation -> existing plant/line,line_allocation,,,CONFIRMED,378 rows/keys. Plant-line pairs exist in hourly feed
+RELATIONSHIP_CLASS,D10 allocation -> source station,line_allocation.station_id,,,CANDIDATE_ONLY,246 rows/keys. Same limitation as equipment
+RELATIONSHIP_CLASS,D10 allocation -> no source station,line_allocation.station_id null (operators),,,UNMATCHED,90 rows/keys. Assembly/lamination work areas
+RELATIONSHIP_CLASS,D10 labour day -> hourly line-shift-day,plant+line+shift+shift_production_date,,,CANDIDATE_ONLY,1104 rows/keys. Line-shift-day level only
+RELATIONSHIP_CLASS,D10 employee -> production run/order,n/a,,,UNMATCHED,248 rows/keys. No evidence; attribution not attempted
+RELATIONSHIP_CLASS,D10 employee -> quality inspector_id (EMP-xxxx),n/a,,,UNMATCHED,180 rows/keys. Source inspector IDs have no master; SYN-EMP ids deliberately distinct
+RELATIONSHIP_CLASS,D10 crew -> hourly operator_team (TEAM-xx),n/a,,,UNMATCHED,18 rows/keys. Source teams are not tied to line/shift

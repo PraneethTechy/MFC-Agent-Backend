@@ -1,0 +1,126 @@
+"""
+Manufacturing Cost Agent - Database Models Package
+Aggregates all SQLAlchemy 2+ entities across master data, standards, actuals, agent records, and ingestion.
+"""
+
+from .base import Base, TimestampMixin
+from .core import Conversation, Message
+from .master_data import (
+    Plant,
+    ProductionLine,
+    WorkCentre,
+    Product,
+    Material,
+    Supplier,
+    UnitOfMeasure,
+    UnitConversion,
+    CalendarPeriod,
+    ExchangeRate,
+)
+from .costing import (
+    CostingVersion,
+    StandardCostItem,
+    BillOfMaterials,
+    BOMItem,
+    Routing,
+    RoutingStep,
+)
+from .actuals import (
+    ProductionOrder,
+    ProductionOutput,
+    MaterialPosting,
+    LabourPosting,
+    MachineEvent,
+    EnergyReading,
+    QualityEvent,
+    OverheadPool,
+    SupplierPriceHistory,
+)
+from .agent_records import (
+    AnalysisRun,
+    ScenarioRun,
+    Recommendation,
+    AuditEvent,
+    InvestigationReportRecord,
+)
+from .connectors import DataConnector
+from .ingestion import (
+    ImportBatch,
+    DataQualityIssue,
+)
+from .real_datasets import (
+    IngestionFileRegistry,
+    StgManufacturingCost,
+    StgHourlyProduction,
+    StgQualityInspection,
+    StgBomComponent,
+    StgMaterialPurchase,
+    StgMaterialConsumption,
+    StgQualityReworkEvent,
+    LineCostBatch,
+    HourlyProductionLog,
+    SerializedQualityInspection,
+    BomComponentRecord,
+    ProductStandardCost,
+    MaterialPurchaseRecord,
+    MaterialConsumptionRecord,
+    QualityReworkEventRecord,
+    FactRecordHistory,
+)
+
+__all__ = [
+    "Base",
+    "TimestampMixin",
+    "Conversation",
+    "Message",
+    "Plant",
+    "ProductionLine",
+    "WorkCentre",
+    "Product",
+    "Material",
+    "Supplier",
+    "UnitOfMeasure",
+    "UnitConversion",
+    "CalendarPeriod",
+    "ExchangeRate",
+    "CostingVersion",
+    "StandardCostItem",
+    "BillOfMaterials",
+    "BOMItem",
+    "Routing",
+    "RoutingStep",
+    "ProductionOrder",
+    "ProductionOutput",
+    "MaterialPosting",
+    "LabourPosting",
+    "MachineEvent",
+    "EnergyReading",
+    "QualityEvent",
+    "OverheadPool",
+    "SupplierPriceHistory",
+    "AnalysisRun",
+    "ScenarioRun",
+    "Recommendation",
+    "AuditEvent",
+    "DataConnector",
+    "ImportBatch",
+    "DataQualityIssue",
+    "IngestionFileRegistry",
+    "StgManufacturingCost",
+    "StgHourlyProduction",
+    "StgQualityInspection",
+    "StgBomComponent",
+    "StgMaterialPurchase",
+    "StgMaterialConsumption",
+    "StgQualityReworkEvent",
+    "LineCostBatch",
+    "HourlyProductionLog",
+    "SerializedQualityInspection",
+    "BomComponentRecord",
+    "ProductStandardCost",
+    "MaterialPurchaseRecord",
+    "MaterialConsumptionRecord",
+    "QualityReworkEventRecord",
+    "FactRecordHistory",
+]
+

@@ -1,0 +1,4 @@
+shift_id,shift_name,start_time,end_time,crosses_midnight,scheduled_punch_hours,break_minutes,scheduled_working_hours,shift_id_link_status,shift_window_basis,record_origin,generation_version
+A,Shift A,06:00,14:00,N,8.0,30,7.5,CONFIRMED,hour-to-shift mapping validated against hourly production feed,GENERATED_SYNTHETIC,GEN-D8D10-V1-20261120
+B,Shift B,14:00,22:00,N,8.0,30,7.5,CONFIRMED,hour-to-shift mapping validated against hourly production feed,GENERATED_SYNTHETIC,GEN-D8D10-V1-20261120
+C,Shift C,22:00,06:00,Y,8.0,30,7.5,CONFIRMED,hour-to-shift mapping validated against hourly production feed,GENERATED_SYNTHETIC,GEN-D8D10-V1-20261120

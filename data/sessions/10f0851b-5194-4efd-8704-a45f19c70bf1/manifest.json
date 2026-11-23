@@ -1,0 +1,29 @@
+{
+  "session_id": "10f0851b-5194-4efd-8704-a45f19c70bf1",
+  "created_at": 1794811285.2755938,
+  "data_origin": "SYNTHETIC_TEST",
+  "dataset_count": 7,
+  "datasets": [
+    "MANUFACTURING_COST",
+    "HOURLY_PRODUCTION",
+    "BOM_COMPONENT",
+    "MATERIAL_PURCHASE",
+    "MATERIAL_CONSUMPTION",
+    "QUALITY_INSPECTION",
+    "QUALITY_REWORK_EVENTS"
+  ],
+  "metadata": {
+    "inspection_id": "insp_665ba344969d",
+    "primary_filename": "test_fact_manufacturing_cost.csv",
+    "uploaded_files": [
+      "test_fact_manufacturing_cost.csv",
+      "test_fact_hourly_production.csv",
+      "test_fact_bom_component.csv",
+      "test_fact_material_purchase.csv",
+      "test_fact_material_consumption.csv",
+      "test_fact_quality_inspection.csv",
+      "test_fact_quality_rework_events.csv"
+    ],
+    "status": "VALIDATED"
+  }
+}

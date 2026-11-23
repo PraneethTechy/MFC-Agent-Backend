@@ -1,0 +1,17 @@
+{
+  "session_id": "0dee7661-0329-47fe-927d-ca48e3be5036",
+  "created_at": 1794653707.8908837,
+  "data_origin": "SYNTHETIC_TEST",
+  "dataset_count": 1,
+  "datasets": [
+    "MANUFACTURING_COST"
+  ],
+  "metadata": {
+    "inspection_id": "insp_6344ff94dfcf",
+    "primary_filename": "fact_cost.csv",
+    "uploaded_files": [
+      "fact_cost.csv"
+    ],
+    "status": "VALIDATED"
+  }
+}

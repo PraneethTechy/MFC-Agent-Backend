@@ -1,0 +1,332 @@
+file,column,data_type,key_role,nullable,distinct_values,example,field_origin,description
+d10_attendance_v1.csv,attendance_id,string,PK,N,19557,ATT-000001,KEY,Unique attendance row id
+d10_attendance_v1.csv,employee_id,string,AK,N,248,SYN-EMP-000001,SYNTHETIC,Synthetic employee id (SYN-EMP-nnnnnn); no personal data
+d10_attendance_v1.csv,attendance_date,string,AK,N,92,2026-08-01,SYNTHETIC,Shift production date
+d10_attendance_v1.csv,plant_id,string,,N,2,IN-KA-01,SOURCE_DERIVED,"Plant identifier (IN-KA-01, IN-TN-01); matches existing datasets"
+d10_attendance_v1.csv,line_id,string,FK,Y,4,SMT-L2,SOURCE_DERIVED,"Production line identifier; valid plant+line pair from hourly feed (KA: SMT-L2/FAL-L2, TN: SMT-L1/FAL-L1)"
+d10_attendance_v1.csv,shift_id,string,FK,N,3,A,SOURCE_DERIVED,"Shift A (06-14), B (14-22), C (22-06); matches hourly feed"
+d10_attendance_v1.csv,supervisor_employee_id,string,FK,Y,14,SYN-EMP-000001,SYNTHETIC,Supervisor employee id
+d10_attendance_v1.csv,crew_id,string,,Y,12,CREW-SMT-L2-A,SYNTHETIC,Synthetic crew (CREW-line-shift); not the hourly TEAM-xx
+d10_attendance_v1.csv,attendance_status,string,,N,4,PRESENT,SYNTHETIC,PRESENT / HALF_DAY / ON_LEAVE / ABSENT
+d10_attendance_v1.csv,leave_category,string,,N,6,NONE,SYNTHETIC,Leave type or NONE
+d10_attendance_v1.csv,absence_category,string,,N,4,NONE,SYNTHETIC,PLANNED_APPROVED / UNPLANNED_UNAPPROVED / PARTIAL_DAY / NONE
+d10_attendance_v1.csv,scheduled_start_ts,string,,N,276,2026-08-01T06:00:00,SYNTHETIC,Scheduled shift start
+d10_attendance_v1.csv,scheduled_end_ts,string,,N,276,2026-08-01T14:00:00,SYNTHETIC,Scheduled shift end
+d10_attendance_v1.csv,check_in_ts,string,,Y,7199,2026-08-01T05:54:00,SYNTHETIC,Punch in (blank if not present)
+d10_attendance_v1.csv,check_out_ts,string,,Y,2145,2026-08-01T14:00:00,SYNTHETIC,Punch out (blank if not present)
+d10_attendance_v1.csv,break_minutes,int64,,N,2,30,SYNTHETIC,"Unpaid break minutes (30 full day, 0 half day)"
+d10_attendance_v1.csv,late_minutes,int64,,N,46,0,SYNTHETIC,Minutes after shift start
+d10_attendance_v1.csv,early_leave_minutes,int64,,N,47,0,SYNTHETIC,Minutes left before shift end
+d10_attendance_v1.csv,scheduled_hours,float64,,N,1,7.5,SYNTHETIC,Paid scheduled hours
+d10_attendance_v1.csv,actual_working_hours,float64,,N,232,7.5,CALCULATED,"(out - max(in,start) - break) in hours"
+d10_attendance_v1.csv,regular_hours,float64,,N,86,7.5,CALCULATED,actual - overtime
+d10_attendance_v1.csv,overtime_hours,float64,,N,7,0.0,SYNTHETIC,Approved OT hours (multiple of 0.25)
+d10_attendance_v1.csv,ot_approval_status,string,,N,2,NOT_APPLICABLE,SYNTHETIC,APPROVED / NOT_APPLICABLE
+d10_attendance_v1.csv,late_flag,string,,N,2,N,CALCULATED,Y if late > 10 min
+d10_attendance_v1.csv,is_direct_labour,string,,N,2,N,SYNTHETIC,Y for LINE_OPERATOR
+d10_attendance_v1.csv,productive_labour_hours,float64,,N,217,0.0,CALCULATED,Actual hours of present direct labour only; 0 for absent/leave/indirect
+d10_attendance_v1.csv,available_for_allocation_flag,string,,N,2,Y,CALCULATED,Y if present or half day
+d10_attendance_v1.csv,record_origin,string,,N,1,GENERATED_SYNTHETIC,SYNTHETIC,Always GENERATED_SYNTHETIC (field-level origin in field_origin column)
+d10_attendance_v1.csv,generation_version,string,,N,1,GEN-D8D10-V1-20261120,SYNTHETIC,Generator run tag
+d10_employee_master_v1.csv,employee_id,string,PK,N,248,SYN-EMP-000001,KEY,Synthetic employee id (SYN-EMP-nnnnnn); no personal data
+d10_employee_master_v1.csv,employee_role,string,,N,6,PRODUCTION_MANAGER,SYNTHETIC,Role
+d10_employee_master_v1.csv,department,string,,N,5,MANAGEMENT,SYNTHETIC,Department
+d10_employee_master_v1.csv,plant_id,string,,N,2,IN-KA-01,SOURCE_DERIVED,"Plant identifier (IN-KA-01, IN-TN-01); matches existing datasets"
+d10_employee_master_v1.csv,home_line_id,string,,Y,4,SMT-L2,SYNTHETIC,Home line (blank for plant manager)
+d10_employee_master_v1.csv,employment_type,string,,N,2,PERMANENT,SYNTHETIC,PERMANENT / CONTRACT
+d10_employee_master_v1.csv,grade,string,,N,3,G3,SYNTHETIC,Synthetic grade
+d10_employee_master_v1.csv,shift_pattern,string,,N,2,FIXED,SYNTHETIC,FIXED or ROTATING_MONTHLY (A->C->B)
+d10_employee_master_v1.csv,initial_shift_id,string,,N,3,A,SYNTHETIC,Shift on 2026-08-01
+d10_employee_master_v1.csv,weekly_off_day,string,,N,7,SUNDAY,SYNTHETIC,Weekly off day
+d10_employee_master_v1.csv,hire_date,string,,N,236,2019-01-02,SYNTHETIC,Synthetic hire date
+d10_employee_master_v1.csv,employment_status,string,,N,1,ACTIVE,SYNTHETIC,ACTIVE
+d10_employee_master_v1.csv,is_direct_labour,string,,N,2,N,SYNTHETIC,Y for LINE_OPERATOR
+d10_employee_master_v1.csv,is_synthetic,string,,N,1,Y,SYNTHETIC,Y = synthetic record
+d10_employee_master_v1.csv,contains_personal_data,string,,N,1,N,SYNTHETIC,N
+d10_employee_master_v1.csv,record_origin,string,,N,1,GENERATED_SYNTHETIC,SYNTHETIC,Always GENERATED_SYNTHETIC (field-level origin in field_origin column)
+d10_employee_master_v1.csv,generation_version,string,,N,1,GEN-D8D10-V1-20261120,SYNTHETIC,Generator run tag
+d10_line_allocation_v1.csv,allocation_id,string,PK,N,380,ALC-00001,KEY,Unique allocation id
+d10_line_allocation_v1.csv,employee_id,string,FK,N,248,SYN-EMP-000001,SYNTHETIC,Synthetic employee id (SYN-EMP-nnnnnn); no personal data
+d10_line_allocation_v1.csv,shift_assignment_id,string,FK,N,380,SAS-00001,SYNTHETIC,Unique roster period id
+d10_line_allocation_v1.csv,plant_id,string,,N,2,IN-KA-01,SOURCE_DERIVED,"Plant identifier (IN-KA-01, IN-TN-01); matches existing datasets"
+d10_line_allocation_v1.csv,line_id,string,FK,Y,4,SMT-L2,SOURCE_DERIVED,"Production line identifier; valid plant+line pair from hourly feed (KA: SMT-L2/FAL-L2, TN: SMT-L1/FAL-L1)"
+d10_line_allocation_v1.csv,shift_id,string,,N,3,A,SOURCE_DERIVED,"Shift A (06-14), B (14-22), C (22-06); matches hourly feed"
+d10_line_allocation_v1.csv,crew_id,string,,Y,12,CREW-SMT-L2-A,SYNTHETIC,Synthetic crew (CREW-line-shift); not the hourly TEAM-xx
+d10_line_allocation_v1.csv,station_id,string,,Y,14,ST-SMT-010,SYNTHETIC,Source station id (candidate mapping)
+d10_line_allocation_v1.csv,work_area_code,string,,N,20,PLANT_MANAGEMENT,SYNTHETIC,Work area / equipment type served
+d10_line_allocation_v1.csv,station_link_status,string,,N,3,NOT_APPLICABLE,LINK_CLASSIFICATION,CANDIDATE_ONLY (source stations not line-specific) / UNMATCHED / NOT_APPLICABLE
+d10_line_allocation_v1.csv,supervisor_employee_id,string,FK,Y,14,SYN-EMP-000001,SYNTHETIC,Supervisor employee id
+d10_line_allocation_v1.csv,effective_from,string,,N,3,2026-08-01,SYNTHETIC,Period start
+d10_line_allocation_v1.csv,effective_to,string,,N,3,2026-10-31,SYNTHETIC,Period end
+d10_line_allocation_v1.csv,allocation_pct,int64,,N,1,100,SYNTHETIC,Allocation percent (100)
+d10_line_allocation_v1.csv,allocation_basis,string,,N,1,GENERATED_ROSTER,SYNTHETIC,GENERATED_ROSTER
+d10_line_allocation_v1.csv,production_run_link_status,string,,N,1,UNMATCHED_NO_EVIDENCE_NOT_ATTEMPTED,LINK_CLASSIFICATION,UNMATCHED: no run attribution attempted
+d10_line_allocation_v1.csv,record_origin,string,,N,1,GENERATED_SYNTHETIC,SYNTHETIC,Always GENERATED_SYNTHETIC (field-level origin in field_origin column)
+d10_line_allocation_v1.csv,generation_version,string,,N,1,GEN-D8D10-V1-20261120,SYNTHETIC,Generator run tag
+d10_line_shift_labour_daily_v1.csv,labour_day_id,string,PK,N,1104,LAB-00001,KEY,Unique line-shift-day summary id
+d10_line_shift_labour_daily_v1.csv,shift_production_date,string,AK,N,92,2026-08-01,SYNTHETIC,Production date of shift (C shift starts previous evening)
+d10_line_shift_labour_daily_v1.csv,plant_id,string,AK,N,2,IN-KA-01,SOURCE_DERIVED,"Plant identifier (IN-KA-01, IN-TN-01); matches existing datasets"
+d10_line_shift_labour_daily_v1.csv,line_id,string,AK,N,4,FAL-L2,SOURCE_DERIVED,"Production line identifier; valid plant+line pair from hourly feed (KA: SMT-L2/FAL-L2, TN: SMT-L1/FAL-L1)"
+d10_line_shift_labour_daily_v1.csv,shift_id,string,AK,N,3,A,SOURCE_DERIVED,"Shift A (06-14), B (14-22), C (22-06); matches hourly feed"
+d10_line_shift_labour_daily_v1.csv,scheduled_hc,int64,,N,7,24,CALCULATED,Scheduled headcount
+d10_line_shift_labour_daily_v1.csv,present_full_day_hc,int64,,N,16,23,CALCULATED,Full-day present headcount
+d10_line_shift_labour_daily_v1.csv,half_day_hc,int64,,N,4,0,CALCULATED,Half-day headcount
+d10_line_shift_labour_daily_v1.csv,absent_hc,int64,,N,5,0,CALCULATED,Unplanned absent headcount
+d10_line_shift_labour_daily_v1.csv,leave_hc,int64,,N,7,1,CALCULATED,Approved leave headcount
+d10_line_shift_labour_daily_v1.csv,direct_labour_present_hc,int64,,N,13,18,CALCULATED,Present direct-labour headcount
+d10_line_shift_labour_daily_v1.csv,total_actual_hours,float64,,N,1004,170.61,CALCULATED,Sum actual hours
+d10_line_shift_labour_daily_v1.csv,productive_labour_hours,float64,,N,911,133.32,CALCULATED,Actual hours of present direct labour only; 0 for absent/leave/indirect
+d10_line_shift_labour_daily_v1.csv,overtime_hours,float64,,N,37,0.0,SYNTHETIC,Approved OT hours (multiple of 0.25)
+d10_line_shift_labour_daily_v1.csv,absenteeism_pct,float64,,N,28,4.17,CALCULATED,(absent+leave)/scheduled x 100
+d10_line_shift_labour_daily_v1.csv,candidate_hourly_slot_count,int64,,N,2,8,SYNTHETIC,Count of candidate hourly slots
+d10_line_shift_labour_daily_v1.csv,hourly_link_status,string,,N,1,CANDIDATE_ONLY,LINK_CLASSIFICATION,CANDIDATE_ONLY or UNMATCHED vs hourly feed; never CONFIRMED
+d10_line_shift_labour_daily_v1.csv,hourly_link_basis,string,,N,1,plant+line+shift_id+shift_production_date (no run/order attribution),SYNTHETIC,Linking keys (no run/order attribution)
+d10_line_shift_labour_daily_v1.csv,record_origin,string,,N,1,GENERATED_SYNTHETIC,SYNTHETIC,Always GENERATED_SYNTHETIC (field-level origin in field_origin column)
+d10_line_shift_labour_daily_v1.csv,generation_version,string,,N,1,GEN-D8D10-V1-20261120,SYNTHETIC,Generator run tag
+d10_shift_assignment_v1.csv,shift_assignment_id,string,PK,N,380,SAS-00001,KEY,Unique roster period id
+d10_shift_assignment_v1.csv,employee_id,string,FK,N,248,SYN-EMP-000001,SYNTHETIC,Synthetic employee id (SYN-EMP-nnnnnn); no personal data
+d10_shift_assignment_v1.csv,plant_id,string,,N,2,IN-KA-01,SOURCE_DERIVED,"Plant identifier (IN-KA-01, IN-TN-01); matches existing datasets"
+d10_shift_assignment_v1.csv,shift_id,string,FK,N,3,A,SOURCE_DERIVED,"Shift A (06-14), B (14-22), C (22-06); matches hourly feed"
+d10_shift_assignment_v1.csv,effective_from,string,,N,3,2026-08-01,SYNTHETIC,Period start
+d10_shift_assignment_v1.csv,effective_to,string,,N,3,2026-10-31,SYNTHETIC,Period end
+d10_shift_assignment_v1.csv,weekly_off_day,string,,N,7,SUNDAY,SYNTHETIC,Weekly off day
+d10_shift_assignment_v1.csv,assignment_type,string,,N,2,FIXED,SYNTHETIC,FIXED / ROTATION_PERIOD
+d10_shift_assignment_v1.csv,record_origin,string,,N,1,GENERATED_SYNTHETIC,SYNTHETIC,Always GENERATED_SYNTHETIC (field-level origin in field_origin column)
+d10_shift_assignment_v1.csv,generation_version,string,,N,1,GEN-D8D10-V1-20261120,SYNTHETIC,Generator run tag
+d10_shift_definition_v1.csv,shift_id,string,PK,N,3,A,KEY,"Shift A (06-14), B (14-22), C (22-06); matches hourly feed"
+d10_shift_definition_v1.csv,shift_name,string,,N,3,Shift A,SYNTHETIC,Shift label
+d10_shift_definition_v1.csv,start_time,string,,N,3,06:00,SYNTHETIC,Shift start HH:MM
+d10_shift_definition_v1.csv,end_time,string,,N,3,14:00,SYNTHETIC,Shift end HH:MM
+d10_shift_definition_v1.csv,crosses_midnight,string,,N,2,N,SYNTHETIC,Y for shift C
+d10_shift_definition_v1.csv,scheduled_punch_hours,float64,,N,1,8.0,SYNTHETIC,On-premises hours (8)
+d10_shift_definition_v1.csv,break_minutes,int64,,N,1,30,SYNTHETIC,"Unpaid break minutes (30 full day, 0 half day)"
+d10_shift_definition_v1.csv,scheduled_working_hours,float64,,N,1,7.5,SYNTHETIC,Paid scheduled hours (7.5)
+d10_shift_definition_v1.csv,shift_id_link_status,string,,N,1,CONFIRMED,LINK_CLASSIFICATION,CONFIRMED against hourly feed
+d10_shift_definition_v1.csv,shift_window_basis,string,,N,1,hour-to-shift mapping validated against hourly production feed,SYNTHETIC,Evidence for shift windows
+d10_shift_definition_v1.csv,record_origin,string,,N,1,GENERATED_SYNTHETIC,SYNTHETIC,Always GENERATED_SYNTHETIC (field-level origin in field_origin column)
+d10_shift_definition_v1.csv,generation_version,string,,N,1,GEN-D8D10-V1-20261120,SYNTHETIC,Generator run tag
+d8_goods_receipt_v1.csv,gr_id,string,PK,N,346,PUR-GR-00001,KEY,Unique goods receipt id
+d8_goods_receipt_v1.csv,po_line_id,string,FK,N,316,PUR-PO-000001-010,SYNTHETIC,Unique PO line id (po_id-nnn)
+d8_goods_receipt_v1.csv,po_id,string,FK,N,232,PUR-PO-000001,SYNTHETIC,Unique internal purchase order id (not a production PO number)
+d8_goods_receipt_v1.csv,delivery_seq,int64,,N,2,1,SYNTHETIC,Delivery sequence within PO line
+d8_goods_receipt_v1.csv,inventory_txn_id,string,AK,N,346,INV-0011347,SOURCE_DERIVED,FK to D7 GOODS_RECEIPT inventory_txn_id
+d8_goods_receipt_v1.csv,d7_reference_id,string,,N,346,GR-GEN-01-0001,SOURCE_DERIVED,D7 reference_id of the receipt
+d8_goods_receipt_v1.csv,plant_id,string,FK,N,2,IN-TN-01,SOURCE_DERIVED,"Plant identifier (IN-KA-01, IN-TN-01); matches existing datasets"
+d8_goods_receipt_v1.csv,storage_location_id,string,,N,2,RM-SMT,SOURCE_DERIVED,Storage location (RM-SMT / RM-FAL) as in D7
+d8_goods_receipt_v1.csv,material_id,string,FK,N,16,MAT-SOC-001,SOURCE_DERIVED,Material identifier; matches BOM and D7 inventory
+d8_goods_receipt_v1.csv,material_batch_id,string,,N,346,LOT-SOC001-260808-TN03,SOURCE_DERIVED,Lot/batch id as posted in D7
+d8_goods_receipt_v1.csv,supplier_id,string,FK,N,15,SUP-SYN-013,SYNTHETIC,Synthetic supplier id (SUP-SYN-nnn)
+d8_goods_receipt_v1.csv,gr_posting_ts,string,,N,346,2026-08-08T08:55:00,SOURCE_DERIVED,D7 transaction timestamp
+d8_goods_receipt_v1.csv,actual_delivery_date,string,,N,71,2026-08-08,SOURCE_DERIVED,Delivery/receipt date (= D7 transaction_date)
+d8_goods_receipt_v1.csv,gr_requested_date,string,,N,86,2026-08-07,SYNTHETIC,Requested date for this delivery
+d8_goods_receipt_v1.csv,gr_promised_date,string,,N,84,2026-08-08,SYNTHETIC,Promised date for this delivery
+d8_goods_receipt_v1.csv,days_late,int64,,N,13,0,CALCULATED,Actual minus promised date (negative = early)
+d8_goods_receipt_v1.csv,on_time_status,string,,N,3,ON_TIME,CALCULATED,ON_TIME / EARLY (>=2 days) / LATE vs promised date; OPEN_NOT_DUE for open lines
+d8_goods_receipt_v1.csv,on_time_vs_requested,string,,N,2,N,CALCULATED,Y if delivered on/before requested date
+d8_goods_receipt_v1.csv,lead_time_days_actual,int64,,N,41,47,CALCULATED,Actual delivery date minus PO date
+d8_goods_receipt_v1.csv,received_qty,int64,,N,56,61900,SYNTHETIC,Physically received incl. rejected
+d8_goods_receipt_v1.csv,accepted_qty,int64,,N,4,61900,SOURCE_DERIVED,Accepted qty; equals D7 qty_in
+d8_goods_receipt_v1.csv,rejected_qty,int64,,N,49,0,SYNTHETIC,Rejected at incoming inspection; not posted to D7
+d8_goods_receipt_v1.csv,d7_posted_qty_in,int64,,N,4,61900,SOURCE_DERIVED,D7 qty_in copy for reconciliation
+d8_goods_receipt_v1.csv,qty_reconciliation_check,string,,N,1,MATCH,CALCULATED,MATCH if accepted_qty = D7 qty_in
+d8_goods_receipt_v1.csv,po_unit_price_inr,float64,,N,312,2354.27,SYNTHETIC,Price on PO line
+d8_goods_receipt_v1.csv,unit_price_inr,float64,,N,342,2354.27,SOURCE_DERIVED,Unit price in INR (aligned to D7 unit value; synthetic)
+d8_goods_receipt_v1.csv,price_variance_inr,float64,,N,31,0.0,CALCULATED,(GR price - PO price) x accepted qty
+d8_goods_receipt_v1.csv,accepted_value_inr,float64,,N,343,145729313.0,CALCULATED,accepted_qty x GR unit price
+d8_goods_receipt_v1.csv,d7_line_value_inr,float64,,N,343,145729313.0,SOURCE_DERIVED,D7 line_value_inr copy
+d8_goods_receipt_v1.csv,value_diff_inr,float64,,N,1,0.0,CALCULATED,accepted_value minus D7 line value
+d8_goods_receipt_v1.csv,receipt_status,string,,N,2,POSTED_FULL,SYNTHETIC,POSTED_FULL / POSTED_ACCEPTED_PORTION_ONLY
+d8_goods_receipt_v1.csv,quality_status,string,,N,2,ACCEPTED,SYNTHETIC,ACCEPTED / ACCEPTED_PARTIAL_REJECT
+d8_goods_receipt_v1.csv,d7_link_status,string,,N,1,CONFIRMED,LINK_CLASSIFICATION,Relationship class to D7 txn (CONFIRMED)
+d8_goods_receipt_v1.csv,d7_link_basis,string,,N,1,EXACT_TXN_ID+PLANT+SLOC+MATERIAL+BATCH+DATE+QTY(accepted=qty_in),SYNTHETIC,Evidence for the D7 link
+d8_goods_receipt_v1.csv,record_origin,string,,N,1,GENERATED_SYNTHETIC,SYNTHETIC,Always GENERATED_SYNTHETIC (field-level origin in field_origin column)
+d8_goods_receipt_v1.csv,generation_version,string,,N,1,GEN-D8D10-V1-20261120,SYNTHETIC,Generator run tag
+d8_po_header_v1.csv,po_id,string,PK,N,260,PUR-PO-000001,KEY,Unique internal purchase order id (not a production PO number)
+d8_po_header_v1.csv,supplier_id,string,FK,N,15,SUP-SYN-013,SYNTHETIC,Synthetic supplier id (SUP-SYN-nnn)
+d8_po_header_v1.csv,plant_id,string,,N,2,IN-TN-01,SOURCE_DERIVED (identifier),"Plant identifier (IN-KA-01, IN-TN-01); matches existing datasets"
+d8_po_header_v1.csv,po_date,string,,N,19,2026-06-22,SYNTHETIC,PO creation date (Monday of week; may precede 2026-08-01 because of lead time)
+d8_po_header_v1.csv,po_currency,string,,N,2,USD,SYNTHETIC,PO currency
+d8_po_header_v1.csv,fx_rate_to_inr,float64,,N,2,88.0,SYNTHETIC,INR per unit of PO currency (synthetic fixed assumption 88.00 for USD)
+d8_po_header_v1.csv,payment_terms_days,int64,,N,3,60,SYNTHETIC,Payment terms in days
+d8_po_header_v1.csv,incoterm,string,,N,2,FCA,SYNTHETIC,Delivery term (assumption)
+d8_po_header_v1.csv,po_status,string,,N,3,CLOSED,SYNTHETIC,OPEN / PARTIALLY_RECEIVED / CLOSED
+d8_po_header_v1.csv,line_count,int64,,N,4,1,CALCULATED,Number of PO lines
+d8_po_header_v1.csv,total_ordered_value_inr,float64,,N,259,145729313.0,CALCULATED,Sum of line ordered value (INR)
+d8_po_header_v1.csv,is_synthetic,string,,N,1,Y,SYNTHETIC,Y = synthetic record
+d8_po_header_v1.csv,related_production_po_link_status,string,,N,1,NOT_APPLICABLE_PURCHASE_PO_NOT_PRODUCTION_PO,LINK_CLASSIFICATION,Purchase PO is not linked to production source_po_number
+d8_po_header_v1.csv,record_origin,string,,N,1,GENERATED_SYNTHETIC,SYNTHETIC,Always GENERATED_SYNTHETIC (field-level origin in field_origin column)
+d8_po_header_v1.csv,generation_version,string,,N,1,GEN-D8D10-V1-20261120,SYNTHETIC,Generator run tag
+d8_po_line_v1.csv,po_line_id,string,PK,N,348,PUR-PO-000001-010,KEY,Unique PO line id (po_id-nnn)
+d8_po_line_v1.csv,po_id,string,AK,N,260,PUR-PO-000001,SYNTHETIC,Unique internal purchase order id (not a production PO number)
+d8_po_line_v1.csv,line_number,int64,AK,N,4,10,SYNTHETIC,Line number within PO
+d8_po_line_v1.csv,plant_id,string,,N,2,IN-TN-01,SOURCE_DERIVED,"Plant identifier (IN-KA-01, IN-TN-01); matches existing datasets"
+d8_po_line_v1.csv,storage_location_id,string,,N,2,RM-SMT,SOURCE_DERIVED,Storage location (RM-SMT / RM-FAL) as in D7
+d8_po_line_v1.csv,supplier_id,string,FK,N,15,SUP-SYN-013,SYNTHETIC,Synthetic supplier id (SUP-SYN-nnn)
+d8_po_line_v1.csv,material_id,string,FK,N,16,MAT-SOC-001,SOURCE_DERIVED,Material identifier; matches BOM and D7 inventory
+d8_po_line_v1.csv,uom,string,,N,1,EA,SYNTHETIC,"Unit of measure (EA, as D7)"
+d8_po_line_v1.csv,ordered_qty,int64,,N,89,61900,SYNTHETIC,Ordered quantity
+d8_po_line_v1.csv,received_qty_total,int64,,N,61,61900,CALCULATED,Total received incl. rejected (sum of GR received_qty)
+d8_po_line_v1.csv,accepted_qty_total,int64,,N,9,61900,CALCULATED,Total accepted = qty posted to D7
+d8_po_line_v1.csv,rejected_qty_total,int64,,N,49,0,CALCULATED,Total rejected (never posted to D7 stock)
+d8_po_line_v1.csv,open_qty,int64,,N,5,0,CALCULATED,Ordered qty not yet received (open lines only)
+d8_po_line_v1.csv,delivery_variance_qty,float64,,Y,39,0.0,CALCULATED,Received minus ordered (closed lines)
+d8_po_line_v1.csv,line_status,string,,N,3,CLOSED_RECEIVED,SYNTHETIC,OPEN / CLOSED_RECEIVED / CLOSED_SHORT
+d8_po_line_v1.csv,short_close_reason,string,,Y,2,PARTIAL_REJECT_NOT_REPLACED,SYNTHETIC,Reason when closed short
+d8_po_line_v1.csv,over_delivery_flag,string,,N,2,N,SYNTHETIC,Y when received > ordered
+d8_po_line_v1.csv,unit_price_currency,string,,N,2,USD,SYNTHETIC,Currency of unit_price
+d8_po_line_v1.csv,unit_price,float64,,N,342,26.7531,SYNTHETIC,Unit price in PO currency
+d8_po_line_v1.csv,unit_price_inr,float64,,N,342,2354.27,SYNTHETIC (aligned to D7),Unit price in INR (aligned to D7 unit value; synthetic)
+d8_po_line_v1.csv,price_basis,string,,N,2,ALIGNED_TO_D7_UNIT_VALUE_SYNTHETIC,SYNTHETIC,How the price was derived
+d8_po_line_v1.csv,ordered_value_inr,float64,,N,345,145729313.0,CALCULATED,Ordered qty x unit_price_inr
+d8_po_line_v1.csv,requested_delivery_date,string,,N,105,2026-08-07,SYNTHETIC,Buyer requested delivery date (first delivery)
+d8_po_line_v1.csv,promised_delivery_date,string,,N,102,2026-08-08,SYNTHETIC,Supplier promised date (first delivery)
+d8_po_line_v1.csv,first_receipt_date,string,,Y,71,2026-08-08,SYNTHETIC,Date of first GR
+d8_po_line_v1.csv,last_receipt_date,string,,Y,70,2026-08-08,SYNTHETIC,Date of last GR
+d8_po_line_v1.csv,planned_lead_time_days,int64,,N,39,46,CALCULATED,Requested date minus PO date
+d8_po_line_v1.csv,actual_lead_time_days,float64,,Y,41,47.0,CALCULATED,First receipt date minus PO date
+d8_po_line_v1.csv,gr_count,int64,,N,3,1,CALCULATED,Number of GRs on the line (1 or 2)
+d8_po_line_v1.csv,on_time_status,string,,N,4,ON_TIME,CALCULATED,ON_TIME / EARLY (>=2 days) / LATE vs promised date; OPEN_NOT_DUE for open lines
+d8_po_line_v1.csv,days_late,float64,,Y,13,0.0,CALCULATED,Actual minus promised date (negative = early)
+d8_po_line_v1.csv,record_origin,string,,N,1,GENERATED_SYNTHETIC,SYNTHETIC,Always GENERATED_SYNTHETIC (field-level origin in field_origin column)
+d8_po_line_v1.csv,generation_version,string,,N,1,GEN-D8D10-V1-20261120,SYNTHETIC,Generator run tag
+d8_supplier_master_v1.csv,supplier_id,string,PK,N,15,SUP-SYN-001,KEY,Synthetic supplier id (SUP-SYN-nnn)
+d8_supplier_master_v1.csv,supplier_name,string,,N,15,Aurex Silicon Ltd (SYNTHETIC),SYNTHETIC,"Fictional supplier name, suffixed (SYNTHETIC)"
+d8_supplier_master_v1.csv,supplier_country,string,,N,5,TW,SYNTHETIC,ISO country (assumption)
+d8_supplier_master_v1.csv,supplier_category,string,,N,12,SEMICONDUCTOR,SYNTHETIC,Supplier commodity category
+d8_supplier_master_v1.csv,supplier_tier,string,,N,3,STRATEGIC,SYNTHETIC,STRATEGIC / PREFERRED / APPROVED (assumption)
+d8_supplier_master_v1.csv,supplier_currency,string,,N,2,USD,SYNTHETIC,Invoice currency
+d8_supplier_master_v1.csv,payment_terms_days,int64,,N,3,60,SYNTHETIC,Payment terms in days
+d8_supplier_master_v1.csv,standard_lead_time_days,int64,,N,14,35,SYNTHETIC,Planned supplier lead time used to place POs
+d8_supplier_master_v1.csv,supplier_status,string,,N,1,ACTIVE,SYNTHETIC,ACTIVE
+d8_supplier_master_v1.csv,approved_plants,string,,N,1,IN-KA-01;IN-TN-01,SYNTHETIC,Plants the supplier may ship to
+d8_supplier_master_v1.csv,is_synthetic,string,,N,1,Y,SYNTHETIC,Y = synthetic record
+d8_supplier_master_v1.csv,source_supplier_match_status,string,,N,1,UNMATCHED_NO_SOURCE_SUPPLIER_DATA,LINK_CLASSIFICATION,UNMATCHED: no real supplier source exists
+d8_supplier_master_v1.csv,record_origin,string,,N,1,GENERATED_SYNTHETIC,SYNTHETIC,Always GENERATED_SYNTHETIC (field-level origin in field_origin column)
+d8_supplier_master_v1.csv,generation_version,string,,N,1,GEN-D8D10-V1-20261120,SYNTHETIC,Generator run tag
+d8_supplier_material_source_list_v1.csv,source_list_id,string,PK,N,19,SRC-SYN-001,KEY,Approved source list row id
+d8_supplier_material_source_list_v1.csv,supplier_id,string,FK,N,15,SUP-SYN-001,SYNTHETIC,Synthetic supplier id (SUP-SYN-nnn)
+d8_supplier_material_source_list_v1.csv,material_id,string,FK,N,16,MAT-SOC-001,SOURCE_DERIVED (identifier),Material identifier; matches BOM and D7 inventory
+d8_supplier_material_source_list_v1.csv,source_rank,string,,N,2,PRIMARY,SYNTHETIC,PRIMARY / SECONDARY source
+d8_supplier_material_source_list_v1.csv,planned_share_pct,int64,,N,3,75,SYNTHETIC,Planned volume share for the source
+d8_supplier_material_source_list_v1.csv,material_in_bom_flag,string,,N,1,Y,SYNTHETIC,Y if material exists in BOM
+d8_supplier_material_source_list_v1.csv,approval_status,string,,N,1,APPROVED,SYNTHETIC,Source approval status
+d8_supplier_material_source_list_v1.csv,record_origin,string,,N,1,GENERATED_SYNTHETIC,SYNTHETIC,Always GENERATED_SYNTHETIC (field-level origin in field_origin column)
+d8_supplier_material_source_list_v1.csv,generation_version,string,,N,1,GEN-D8D10-V1-20261120,SYNTHETIC,Generator run tag
+d8_supplier_quality_v1.csv,quality_id,string,PK,N,346,PUR-QR-00001,KEY,Unique supplier quality record id
+d8_supplier_quality_v1.csv,gr_id,string,FK,N,346,PUR-GR-00001,SYNTHETIC,Unique goods receipt id
+d8_supplier_quality_v1.csv,plant_id,string,,N,2,IN-TN-01,SOURCE_DERIVED (identifier),"Plant identifier (IN-KA-01, IN-TN-01); matches existing datasets"
+d8_supplier_quality_v1.csv,supplier_id,string,,N,15,SUP-SYN-013,SYNTHETIC,Synthetic supplier id (SUP-SYN-nnn)
+d8_supplier_quality_v1.csv,material_id,string,,N,16,MAT-SOC-001,SOURCE_DERIVED (identifier),Material identifier; matches BOM and D7 inventory
+d8_supplier_quality_v1.csv,material_batch_id,string,,N,346,LOT-SOC001-260808-TN03,SYNTHETIC,Lot/batch id as posted in D7
+d8_supplier_quality_v1.csv,inspection_ts,string,,N,341,2026-08-08T08:05:00,SYNTHETIC,Incoming inspection timestamp
+d8_supplier_quality_v1.csv,inspection_type,string,,N,1,INCOMING_AQL,SYNTHETIC,INCOMING_AQL
+d8_supplier_quality_v1.csv,lot_size_qty,int64,,N,56,61900,SYNTHETIC,Received lot size
+d8_supplier_quality_v1.csv,sample_size,int64,,N,1,500,SYNTHETIC,AQL sample size
+d8_supplier_quality_v1.csv,sample_defects,int64,,N,22,0,SYNTHETIC,Defects found in sample
+d8_supplier_quality_v1.csv,sample_defect_rate_pct,float64,,N,22,0.0,CALCULATED,Sample defects / sample size x 100
+d8_supplier_quality_v1.csv,primary_defect_code,string,,N,29,NONE,SYNTHETIC,Main defect (synthetic)
+d8_supplier_quality_v1.csv,severity,string,,N,4,NONE,SYNTHETIC,NONE / MINOR / MAJOR / CRITICAL
+d8_supplier_quality_v1.csv,inspection_result,string,,N,3,ACCEPT,SYNTHETIC,ACCEPT / ACCEPT_WITH_DEVIATION / PARTIAL_REJECT
+d8_supplier_quality_v1.csv,rejected_qty,int64,,N,49,0,SYNTHETIC,Rejected at incoming inspection; not posted to D7
+d8_supplier_quality_v1.csv,reject_ppm,int64,,N,54,0,CALCULATED,Rejected qty / received qty x 1e6
+d8_supplier_quality_v1.csv,disposition,string,,N,3,NONE,SYNTHETIC,NONE / RETURN_TO_SUPPLIER / QUARANTINE_PENDING_RETURN
+d8_supplier_quality_v1.csv,scar_raised,string,,N,2,N,SYNTHETIC,Y if supplier corrective action requested
+d8_supplier_quality_v1.csv,record_origin,string,,N,1,GENERATED_SYNTHETIC,SYNTHETIC,Always GENERATED_SYNTHETIC (field-level origin in field_origin column)
+d8_supplier_quality_v1.csv,generation_version,string,,N,1,GEN-D8D10-V1-20261120,SYNTHETIC,Generator run tag
+d9_energy_reading_shift_v1.csv,reading_id,string,PK,N,8864,EN-0000001,KEY,Unique energy reading id
+d9_energy_reading_shift_v1.csv,energy_meter_id,string,FK,N,32,EM-SMT-L2-01,SYNTHETIC,Meter id (one per equipment)
+d9_energy_reading_shift_v1.csv,equipment_id,string,AK,N,32,EQ-SMT-L2-01,SYNTHETIC,Unique equipment id (EQ-line-nn)
+d9_energy_reading_shift_v1.csv,plant_id,string,,N,2,IN-KA-01,SOURCE_DERIVED,"Plant identifier (IN-KA-01, IN-TN-01); matches existing datasets"
+d9_energy_reading_shift_v1.csv,line_id,string,,N,4,SMT-L2,SOURCE_DERIVED,"Production line identifier; valid plant+line pair from hourly feed (KA: SMT-L2/FAL-L2, TN: SMT-L1/FAL-L1)"
+d9_energy_reading_shift_v1.csv,shift_production_date,string,AK,N,93,2026-07-31,SYNTHETIC,Production date of shift (C shift starts previous evening)
+d9_energy_reading_shift_v1.csv,shift_id,string,AK,N,3,C,SOURCE_DERIVED,"Shift A (06-14), B (14-22), C (22-06); matches hourly feed"
+d9_energy_reading_shift_v1.csv,period_start_ts,string,,N,277,2026-08-01T00:00:00,SYNTHETIC,Reading window start (clipped to 2026-08-01..11-01)
+d9_energy_reading_shift_v1.csv,period_end_ts,string,,N,277,2026-08-01T06:00:00,SYNTHETIC,Reading window end
+d9_energy_reading_shift_v1.csv,window_min,int64,,N,3,360,CALCULATED,Minutes in window
+d9_energy_reading_shift_v1.csv,operating_min,int64,,N,195,360,CALCULATED,Window minus idle and downtime
+d9_energy_reading_shift_v1.csv,idle_min,int64,,N,158,0,SYNTHETIC,Idle minutes
+d9_energy_reading_shift_v1.csv,planned_downtime_min,int64,,N,118,0,SYNTHETIC,Planned downtime minutes
+d9_energy_reading_shift_v1.csv,unplanned_downtime_min,int64,,N,135,0,SYNTHETIC,Unplanned downtime minutes
+d9_energy_reading_shift_v1.csv,energy_kwh,float64,,N,7968,18.634,SYNTHETIC,Synthetic kWh = rated kW x state minutes x factors x 3% noise
+d9_energy_reading_shift_v1.csv,meter_register_start_kwh,float64,,N,8864,279870.0,SYNTHETIC,Cumulative meter register at start
+d9_energy_reading_shift_v1.csv,meter_register_end_kwh,float64,,N,8864,279888.634,CALCULATED,Register at end (start + kWh)
+d9_energy_reading_shift_v1.csv,tariff_inr_per_kwh,float64,,N,6,7.1,SYNTHETIC,Assumed plant/shift tariff
+d9_energy_reading_shift_v1.csv,estimated_energy_cost_inr,float64,,N,7956,132.3,CALCULATED,kWh x tariff
+d9_energy_reading_shift_v1.csv,tariff_basis,string,,N,1,SYNTHETIC_PLANT_SHIFT_TARIFF_ASSUMPTION,SYNTHETIC,Tariff source flag (assumption)
+d9_energy_reading_shift_v1.csv,reading_basis,string,,N,1,SYNTHETIC_MODEL_RATED_KW_X_STATE_MINUTES,SYNTHETIC,Energy value method (synthetic)
+d9_energy_reading_shift_v1.csv,is_synthetic,string,,N,1,Y,SYNTHETIC,Y = synthetic record
+d9_energy_reading_shift_v1.csv,record_origin,string,,N,1,GENERATED_SYNTHETIC,SYNTHETIC,Always GENERATED_SYNTHETIC (field-level origin in field_origin column)
+d9_energy_reading_shift_v1.csv,generation_version,string,,N,1,GEN-D8D10-V1-20261120,SYNTHETIC,Generator run tag
+d9_equipment_event_v1.csv,event_id,string,PK,N,2487,EQE-000001,KEY,Unique equipment event id
+d9_equipment_event_v1.csv,equipment_id,string,FK,N,32,EQ-FAL-L1-01,SYNTHETIC,Unique equipment id (EQ-line-nn)
+d9_equipment_event_v1.csv,plant_id,string,,N,2,IN-TN-01,SOURCE_DERIVED,"Plant identifier (IN-KA-01, IN-TN-01); matches existing datasets"
+d9_equipment_event_v1.csv,line_id,string,,N,4,FAL-L1,SOURCE_DERIVED,"Production line identifier; valid plant+line pair from hourly feed (KA: SMT-L2/FAL-L2, TN: SMT-L1/FAL-L1)"
+d9_equipment_event_v1.csv,station_id,string,,Y,14,ST-TST-010,SYNTHETIC,Source station id (candidate mapping)
+d9_equipment_event_v1.csv,event_type,string,,N,3,PLANNED_DOWNTIME,SYNTHETIC,PLANNED_DOWNTIME / UNPLANNED_DOWNTIME / IDLE (non-overlapping per equipment)
+d9_equipment_event_v1.csv,reason_code,string,,N,30,MODEL_CHANGEOVER,SYNTHETIC,Event reason code
+d9_equipment_event_v1.csv,reason_category,string,,N,7,CHANGEOVER,SYNTHETIC,Category aligned to hourly downtime_reason vocabulary where one exists
+d9_equipment_event_v1.csv,event_start_ts,string,,N,2342,2026-08-01T00:41:00,SYNTHETIC,Event start
+d9_equipment_event_v1.csv,event_end_ts,string,,N,2457,2026-08-01T01:08:00,SYNTHETIC,Event end (exclusive)
+d9_equipment_event_v1.csv,duration_min,int64,,N,178,27,CALCULATED,Event duration in minutes
+d9_equipment_event_v1.csv,start_shift_id,string,,N,3,C,SYNTHETIC,Shift at event start
+d9_equipment_event_v1.csv,start_shift_production_date,string,,N,93,2026-07-31,SYNTHETIC,Shift production date at event start
+d9_equipment_event_v1.csv,is_micro_stop,string,,N,2,N,SYNTHETIC,Y for 1-5 minute stops
+d9_equipment_event_v1.csv,maintenance_id,string,FK,Y,427,MNT-000001,SYNTHETIC,Unique maintenance work order id / FK on events
+d9_equipment_event_v1.csv,hourly_link_status,string,,N,2,UNMATCHED,LINK_CLASSIFICATION,CANDIDATE_ONLY or UNMATCHED vs hourly feed; never CONFIRMED
+d9_equipment_event_v1.csv,candidate_hourly_slot_count,int64,,N,4,0,SYNTHETIC,Count of candidate hourly slots
+d9_equipment_event_v1.csv,is_synthetic,string,,N,1,Y,SYNTHETIC,Y = synthetic record
+d9_equipment_event_v1.csv,record_origin,string,,N,1,GENERATED_SYNTHETIC,SYNTHETIC,Always GENERATED_SYNTHETIC (field-level origin in field_origin column)
+d9_equipment_event_v1.csv,generation_version,string,,N,1,GEN-D8D10-V1-20261120,SYNTHETIC,Generator run tag
+d9_equipment_master_v1.csv,equipment_id,string,PK,N,32,EQ-SMT-L2-01,KEY,Unique equipment id (EQ-line-nn)
+d9_equipment_master_v1.csv,equipment_type,string,,N,16,STENCIL_PRINTER,SYNTHETIC,Equipment type (assumed catalogue)
+d9_equipment_master_v1.csv,process_stage,string,,N,2,SMT,SYNTHETIC,SMT or FAL
+d9_equipment_master_v1.csv,plant_id,string,,N,2,IN-KA-01,SOURCE_DERIVED,"Plant identifier (IN-KA-01, IN-TN-01); matches existing datasets"
+d9_equipment_master_v1.csv,line_id,string,FK,N,4,SMT-L2,SOURCE_DERIVED,"Production line identifier; valid plant+line pair from hourly feed (KA: SMT-L2/FAL-L2, TN: SMT-L1/FAL-L1)"
+d9_equipment_master_v1.csv,line_type,string,,N,2,SMT,SYNTHETIC,Line type from hourly feed
+d9_equipment_master_v1.csv,sequence_in_line,int64,,N,8,1,SYNTHETIC,Process order on line
+d9_equipment_master_v1.csv,station_id,string,,Y,14,ST-SMT-010,SYNTHETIC,Source station id (candidate mapping)
+d9_equipment_master_v1.csv,line_link_status,string,,N,1,CONFIRMED,LINK_CLASSIFICATION,Relationship equipment -> plant/line (CONFIRMED)
+d9_equipment_master_v1.csv,station_link_status,string,,N,2,CANDIDATE_ONLY,LINK_CLASSIFICATION,CANDIDATE_ONLY (source stations not line-specific) / UNMATCHED / NOT_APPLICABLE
+d9_equipment_master_v1.csv,energy_meter_id,string,AK,N,32,EM-SMT-L2-01,SYNTHETIC,Meter id (one per equipment)
+d9_equipment_master_v1.csv,rated_power_kw,float64,,N,16,3.0,SYNTHETIC,Assumed running power in kW
+d9_equipment_master_v1.csv,idle_power_factor,float64,,N,5,0.35,SYNTHETIC,Idle power as fraction of rated
+d9_equipment_master_v1.csv,unplanned_down_power_factor,float64,,N,3,0.1,SYNTHETIC,Unplanned-down power fraction
+d9_equipment_master_v1.csv,planned_down_power_factor,float64,,N,3,0.05,SYNTHETIC,Planned-down power fraction
+d9_equipment_master_v1.csv,criticality,string,,N,3,MEDIUM,SYNTHETIC,HIGH / MEDIUM / LOW
+d9_equipment_master_v1.csv,commissioning_year,int64,,N,4,2023,SYNTHETIC,Synthetic commissioning year
+d9_equipment_master_v1.csv,pm_interval_days,int64,,N,1,30,SYNTHETIC,Preventive maintenance interval
+d9_equipment_master_v1.csv,last_pm_date,string,,N,17,2026-10-17,SYNTHETIC,Last completed PM
+d9_equipment_master_v1.csv,next_pm_due_date,string,,N,17,2026-11-16,CALCULATED,Last PM + interval
+d9_equipment_master_v1.csv,maintenance_status,string,,N,3,CURRENT,SYNTHETIC,CURRENT / DUE_WITHIN_7D / OVERDUE as of 2026-10-31
+d9_equipment_master_v1.csv,maintenance_status_as_of,string,,N,1,2026-10-31,SYNTHETIC,As-of date
+d9_equipment_master_v1.csv,is_synthetic,string,,N,1,Y,SYNTHETIC,Y = synthetic record
+d9_equipment_master_v1.csv,record_origin,string,,N,1,GENERATED_SYNTHETIC,SYNTHETIC,Always GENERATED_SYNTHETIC (field-level origin in field_origin column)
+d9_equipment_master_v1.csv,generation_version,string,,N,1,GEN-D8D10-V1-20261120,SYNTHETIC,Generator run tag
+d9_event_hourly_candidate_link_v1.csv,link_id,string,PK,N,262,EQL-000001,KEY,Unique candidate link id
+d9_event_hourly_candidate_link_v1.csv,equipment_event_id,string,FK,N,252,EQE-000005,SYNTHETIC,FK to equipment event
+d9_event_hourly_candidate_link_v1.csv,hourly_event_id,string,FK,N,227,PRD-00000063,LINK_CLASSIFICATION,FK to hourly production event_id
+d9_event_hourly_candidate_link_v1.csv,line_id,string,,N,4,FAL-L1,SOURCE_DERIVED,"Production line identifier; valid plant+line pair from hourly feed (KA: SMT-L2/FAL-L2, TN: SMT-L1/FAL-L1)"
+d9_event_hourly_candidate_link_v1.csv,overlap_min,int64,,N,54,34,CALCULATED,Minutes of overlap with the hourly slot
+d9_event_hourly_candidate_link_v1.csv,hourly_slot_downtime_min,int64,,N,5,5,SYNTHETIC,downtime_min of the hourly slot
+d9_event_hourly_candidate_link_v1.csv,match_basis,string,,N,1,SAME_LINE+TIME_OVERLAP+REASON_CATEGORY_EQUAL,SYNTHETIC,Matching rule
+d9_event_hourly_candidate_link_v1.csv,link_status,string,,N,1,CANDIDATE_ONLY,LINK_CLASSIFICATION,CANDIDATE_ONLY
+d9_event_hourly_candidate_link_v1.csv,caveat,string,,N,1,Hourly downtime_min has no intra-hour position and no equipment id; not confirmed,SYNTHETIC,Why the link is not confirmed
+d9_maintenance_event_v1.csv,maintenance_id,string,PK,N,429,MNT-000001,KEY,Unique maintenance work order id / FK on events
+d9_maintenance_event_v1.csv,equipment_id,string,FK,N,32,EQ-FAL-L1-01,SYNTHETIC,Unique equipment id (EQ-line-nn)
+d9_maintenance_event_v1.csv,plant_id,string,,N,2,IN-TN-01,SOURCE_DERIVED,"Plant identifier (IN-KA-01, IN-TN-01); matches existing datasets"
+d9_maintenance_event_v1.csv,line_id,string,,N,4,FAL-L1,SOURCE_DERIVED,"Production line identifier; valid plant+line pair from hourly feed (KA: SMT-L2/FAL-L2, TN: SMT-L1/FAL-L1)"
+d9_maintenance_event_v1.csv,maintenance_type,string,,N,3,CORRECTIVE,SYNTHETIC,PREVENTIVE / CALIBRATION / CORRECTIVE
+d9_maintenance_event_v1.csv,work_order_status,string,,N,2,COMPLETED,SYNTHETIC,COMPLETED / DEFERRED
+d9_maintenance_event_v1.csv,scheduled_start_ts,string,,Y,102,2026-08-17T08:00:00,SYNTHETIC,Scheduled shift start
+d9_maintenance_event_v1.csv,actual_start_ts,string,,Y,419,2026-08-01T05:32:00,SYNTHETIC,Work start
+d9_maintenance_event_v1.csv,actual_end_ts,string,,Y,426,2026-08-01T05:51:00,SYNTHETIC,Work end
+d9_maintenance_event_v1.csv,duration_min,float64,,Y,137,19.0,CALCULATED,Event duration in minutes
+d9_maintenance_event_v1.csv,linked_downtime_event_id,string,FK,Y,427,EQE-000002,SYNTHETIC,FK to the downtime event the work belongs to
+d9_maintenance_event_v1.csv,failure_reason_code,string,,Y,22,SCREW_FEEDER_JAM,SYNTHETIC,Reason of failure (corrective)
+d9_maintenance_event_v1.csv,parts_replaced_flag,string,,N,2,N,SYNTHETIC,Y if parts replaced
+d9_maintenance_event_v1.csv,estimated_cost_inr,float64,,N,265,216.67,SYNTHETIC,Illustrative cost estimate
+d9_maintenance_event_v1.csv,repeat_failure_within_7d_flag,string,,N,2,N,CALCULATED,Y if same equipment/reason failed again within 7 days
+d9_maintenance_event_v1.csv,status_after,string,,N,2,RETURNED_TO_SERVICE,SYNTHETIC,Equipment status after work
+d9_maintenance_event_v1.csv,is_synthetic,string,,N,1,Y,SYNTHETIC,Y = synthetic record
+d9_maintenance_event_v1.csv,record_origin,string,,N,1,GENERATED_SYNTHETIC,SYNTHETIC,Always GENERATED_SYNTHETIC (field-level origin in field_origin column)
+d9_maintenance_event_v1.csv,generation_version,string,,N,1,GEN-D8D10-V1-20261120,SYNTHETIC,Generator run tag

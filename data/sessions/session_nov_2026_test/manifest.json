@@ -1,0 +1,21 @@
+{
+  "session_id": "session_nov_2026_test",
+  "created_at": 1794639353.8140404,
+  "data_origin": "SYNTHETIC_TEST",
+  "dataset_count": 7,
+  "datasets": [
+    "MANUFACTURING_COST",
+    "HOURLY_PRODUCTION",
+    "BOM_COMPONENT",
+    "MATERIAL_PURCHASE",
+    "MATERIAL_CONSUMPTION",
+    "QUALITY_INSPECTION",
+    "QUALITY_REWORK_EVENTS"
+  ],
+  "metadata": {
+    "title": "November 2026 Benchmark Test Package",
+    "source": "Claude-generated November 2026 test datasets",
+    "file_count": 7,
+    "total_rows": 40369
+  }
+}

@@ -1,0 +1,30 @@
+key_type,table,column(s),references_table,references_column,note
+PK,d5_production_order_v1,production_order_id,,,Unique generated key
+AK,d5_production_order_v1,order_context_key,,,"Natural key source_po|plant|product, unique"
+PK,d5_production_run_v1,production_run_id,,,Unique generated key
+AK,d5_production_run_v1,source_production_run_key,,,"Equals hourly production_run_key, unique"
+FK,d5_production_run_v1,production_order_id,d5_production_order_v1,production_order_id,Many runs : 1 order (mandatory)
+FK,d5_production_order_v1,completion_basis_run_id,d5_production_run_v1,production_run_id,Run supplying order actuals
+PK,d5_run_source_link_v1,link_id,,,Unique generated key
+FK,d5_run_source_link_v1,production_run_id,d5_production_run_v1,production_run_id,Many links : 1 run
+FK,d5_run_source_link_v1,production_order_id,d5_production_order_v1,production_order_id,
+FK (external),d5_run_source_link_v1,source_record_id,fact_hourly_production_enhanced_v1.event_id / fact_manufacturing_cost_enhanced_v1.cost_record_id,,"Chosen by source_table; hourly CONFIRMED lineage, cost CANDIDATE_ONLY"
+FK (external),d5_run_source_link_v1,matched_hourly_event_id,fact_hourly_production_enhanced_v1,event_id,
+FK (external),d5_production_run_v1,"first_source_event_id, last_source_event_id",fact_hourly_production_enhanced_v1,event_id,Source reference range
+PK,d6_material_issue_consumption_v1,material_issue_id,,,Unique generated key
+FK,d6_material_issue_consumption_v1,production_order_id,d5_production_order_v1,production_order_id,
+FK,d6_material_issue_consumption_v1,production_run_id,d5_production_run_v1,production_run_id,Run belongs to the stated order (validated)
+FK (external),d6_material_issue_consumption_v1,source_hourly_event_id,fact_hourly_production_enhanced_v1,event_id,
+FK (external),d6_material_issue_consumption_v1,material_id,fact_bom_component_enhanced_v1,material_id,"Also (product_id, material_id) pair valid in BOM"
+FK (external),d6_material_issue_consumption_v1,bom_id,fact_bom_component_enhanced_v1,bom_id,
+"FK (external, candidate)",d6_material_issue_consumption_v1,candidate_cost_record_id,fact_manufacturing_cost_enhanced_v1,cost_record_id,CANDIDATE_ONLY
+FK,d6_material_issue_consumption_v1,inventory_issue_txn_id,d7_inventory_transactions_v1,inventory_txn_id,1:1
+FK,d6_material_issue_consumption_v1,inventory_return_txn_id,d7_inventory_transactions_v1,inventory_txn_id,1:0..1
+AK,d6_material_issue_consumption_v1,production_run_id+source_hourly_event_id+material_id+material_batch_id+transaction_type,,,"Business key, unique"
+PK,d7_inventory_transactions_v1,inventory_txn_id,,,Unique generated key
+AK,d7_inventory_transactions_v1,plant_id+material_id+ledger_seq,,,Posting order; reproducible balance
+FK (external),d7_inventory_transactions_v1,material_id,fact_bom_component_enhanced_v1,material_id,
+FK,d7_inventory_transactions_v1,related_material_issue_id,d6_material_issue_consumption_v1,material_issue_id,Issue/return rows only
+FK,d7_inventory_transactions_v1,related_production_run_id,d5_production_run_v1,production_run_id,Issue/return rows only
+FK,d7_inventory_transactions_v1,related_production_order_id,d5_production_order_v1,production_order_id,Issue/return rows only
+FK (self),d7_inventory_transactions_v1,counterpart_inventory_txn_id,d7_inventory_transactions_v1,inventory_txn_id,Transfer OUT<->IN

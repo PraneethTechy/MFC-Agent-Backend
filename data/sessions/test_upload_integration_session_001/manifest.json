@@ -1,0 +1,16 @@
+{
+  "session_id": "test_upload_integration_session_001",
+  "created_at": 1795186268.1347432,
+  "data_origin": "SYNTHETIC_TEST",
+  "dataset_count": 2,
+  "datasets": [
+    "HOURLY_PRODUCTION",
+    "MANUFACTURING_COST"
+  ],
+  "metadata": {
+    "uploaded_files": [
+      "d1_hourly_production.csv",
+      "d2_manufacturing_cost.csv"
+    ]
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "session_id": "test_nov2026_reconciliation",
+  "created_at": 1795174275.27153,
+  "data_origin": "SYNTHETIC_TEST",
+  "dataset_count": 9,
+  "datasets": [
+    "PRODUCTION_ORDERS",
+    "HOURLY_PRODUCTION",
+    "QUALITY_INSPECTION",
+    "MATERIAL_CONSUMPTION",
+    "MATERIAL_PURCHASE",
+    "INVENTORY_TRANSACTIONS",
+    "EQUIPMENT_DOWNTIME_ENERGY",
+    "WORKFORCE_ATTENDANCE",
+    "MANUFACTURING_COST"
+  ],
+  "metadata": {}
+}

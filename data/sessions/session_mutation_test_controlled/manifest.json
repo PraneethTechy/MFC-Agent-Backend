@@ -1,0 +1,16 @@
+{
+  "session_id": "session_mutation_test_controlled",
+  "created_at": 1794990972.9447372,
+  "data_origin": "SYNTHETIC_TEST",
+  "dataset_count": 7,
+  "datasets": [
+    "MANUFACTURING_COST",
+    "HOURLY_PRODUCTION",
+    "BOM_COMPONENT",
+    "MATERIAL_PURCHASE",
+    "MATERIAL_CONSUMPTION",
+    "QUALITY_INSPECTION",
+    "QUALITY_REWORK_EVENTS"
+  ],
+  "metadata": {}
+}
