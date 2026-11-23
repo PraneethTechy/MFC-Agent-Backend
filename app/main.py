@@ -94,7 +94,7 @@ app = FastAPI(
 # CORS configuration for Vite frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=settings.parsed_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -119,6 +119,7 @@ class ValidateBatchRequest(BaseModel):
 # -----------------------------------------------------------------------------
 # Diagnostic & Health Endpoints
 # -----------------------------------------------------------------------------
+@app.get("/health", response_model=HealthResponse, tags=["Diagnostics"])
 @app.get("/api/health", response_model=HealthResponse, tags=["Diagnostics"])
 def health_check():
     """Returns application health diagnostics, database connectivity, and Domo status."""

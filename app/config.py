@@ -25,8 +25,27 @@ class Settings(BaseSettings):
     # Neon PostgreSQL — single connection URL
     database_url: str = "postgresql+psycopg://AGENT_RW_USER:YOUR_PASSWORD@YOUR_NEON_POOLER_HOST/YOUR_DATABASE?sslmode=require"
 
+    # CORS Configuration — comma-separated allowed origins or '*'
+    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+
     # Data Mode Policy: "PRODUCTION" (real production/baseline only) or "DEMO" (real + synthetic benchmarks)
     data_mode: str = "PRODUCTION"
+
+    @property
+    def parsed_cors_origins(self) -> list[str]:
+        """
+        Parses comma-separated CORS origins from environment variable.
+        Supports '*' for permissive environments or comma-delimited origin URLs.
+        Retains local Vite development origins for seamless local developer experience.
+        """
+        raw = self.cors_origins.strip()
+        if raw == "*":
+            return ["*"]
+        origins = [o.strip() for o in raw.split(",") if o.strip()]
+        for local_origin in ["http://localhost:5173", "http://127.0.0.1:5173"]:
+            if local_origin not in origins:
+                origins.append(local_origin)
+        return origins
 
     @property
     def sqlalchemy_database_url(self) -> str:
