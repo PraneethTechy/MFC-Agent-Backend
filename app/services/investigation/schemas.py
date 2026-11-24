@@ -262,6 +262,8 @@ class InvestigationReport(BaseModel):
     cost_improvement_plan: Optional[dict[str, Any]] = None
     calculation_details: dict[str, Any] = Field(default_factory=dict)
     ai_narrative: Optional[str] = None
+    status: Optional[str] = None
+    consolidation_status: Optional[str] = None
 
 
 class InvestigationHistoryItem(BaseModel):

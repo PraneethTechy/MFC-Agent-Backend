@@ -1400,6 +1400,9 @@ def get_dashboard_overview(
         if effective_mode not in ("PRODUCTION", "DEMO"):
             effective_mode = "PRODUCTION"
 
+        from .services.analytics.global_date_service import GlobalDateRangeService
+        date_bounds = GlobalDateRangeService.get_global_date_bounds(db, is_synthetic=False if effective_mode == "PRODUCTION" else None)
+
         # Base LineCostBatch query with scope filters (Strictly committed global store)
         cost_q = db.query(
             func.sum(LineCostBatch.total_direct_cost_inr),
@@ -1508,8 +1511,8 @@ def get_dashboard_overview(
             direct_costed_batches=cost_batches,
             uncosted_operational_runs=uncosted_runs,
             uncosted_volume=uncosted_vol,
-            data_as_of="2026-10-31" if effective_mode == "PRODUCTION" else "2026-11-25",
-            reporting_period=f"{start_date} to {end_date}" if start_date and end_date else (period_code or ("Aug - Oct 2026" if effective_mode == "PRODUCTION" else "All Available History")),
+            data_as_of=date_bounds.get("max_date") or ("2026-10-31" if effective_mode == "PRODUCTION" else "2026-11-25"),
+            reporting_period=f"{start_date} to {end_date}" if start_date and end_date else (period_code or date_bounds.get("default_period") or ("Aug - Oct 2026" if effective_mode == "PRODUCTION" else "All Available History")),
             overhead_status="NOT_AVAILABLE",
             standards_status="UNVERIFIED_STANDARD",
         )
@@ -3018,6 +3021,21 @@ def get_investigation_report(
 
         if no_filters and not datasets:
             set_cached_report(cache_key, report)
+
+        # Check if this package was already committed
+        rep_rec = db.query(InvestigationReportRecord).filter(
+            (InvestigationReportRecord.report_id == getattr(report, "report_id", None)) |
+            (InvestigationReportRecord.source_batch_id == session_id) |
+            (InvestigationReportRecord.inspection_id == session_id) |
+            (InvestigationReportRecord.source_batch_id.like(f"{session_id[:20]}%"))
+        ).first() if session_id else None
+        if rep_rec and rep_rec.status == "COMMITTED":
+            report.status = "COMMITTED"
+            report.consolidation_status = "COMMITTED"
+        else:
+            report.status = "STAGED_PACKAGE"
+            report.consolidation_status = "STAGED_PACKAGE"
+
         return report
 
     except HTTPException:
@@ -3050,7 +3068,8 @@ def approve_investigation_consolidation(
     rec = db.query(InvestigationReportRecord).filter(
         (InvestigationReportRecord.report_id == report_id) |
         (InvestigationReportRecord.source_batch_id == report_id) |
-        (InvestigationReportRecord.inspection_id == report_id)
+        (InvestigationReportRecord.inspection_id == report_id) |
+        (InvestigationReportRecord.source_batch_id.like(f"{report_id[:20]}%"))
     ).first()
 
     target_session_id = None
@@ -3083,8 +3102,8 @@ def approve_investigation_consolidation(
 
     # Determine origin and synthetic classification
     sess_info = SessionDataStore.get_session_info(target_session_id) or {}
-    data_origin = (rec.data_origin if rec and rec.data_origin else sess_info.get("data_origin", "SYNTHETIC_TEST"))
-    is_synth = (data_origin != "BASELINE")
+    data_origin = (rec.data_origin if rec and rec.data_origin else sess_info.get("data_origin", "REAL"))
+    is_synth = (data_origin in ("SYNTHETIC_TEST", "SYNTHETIC", "DEMO"))
     is_already_committed = (rec is not None and rec.status == "COMMITTED")
 
     try:
@@ -3094,6 +3113,7 @@ def approve_investigation_consolidation(
             session_id=target_session_id,
             approver_identifier="lead_investigator",
             correction_reason=f"Investigation Package Approval: {report_title}",
+            data_origin=data_origin,
         )
         if rec:
             rec.status = "COMMITTED"
@@ -3101,8 +3121,14 @@ def approve_investigation_consolidation(
 
         total_promoted = sum(v for k, v in results.items() if k != "archived_historical_corrections")
 
-        if is_already_committed:
-            msg = f"Investigation package is already committed to consolidated company records ({total_promoted:,} records verified in Global Store)."
+        if (is_already_committed or (rec and rec.status == "COMMITTED")) and total_promoted == 0:
+            verified_count = sum(batch.total_rows for batch in db.query(ImportBatch).filter(ImportBatch.id.like(f"{target_session_id[:20]}%")).all()) or total_promoted
+            if verified_count == 0:
+                cost_c = db.execute(text("SELECT count(*) FROM line_cost_batches WHERE ingestion_batch_id LIKE :p"), {"p": f"{target_session_id[:20]}%"}).scalar() or 0
+                prod_c = db.execute(text("SELECT count(*) FROM hourly_production_logs WHERE ingestion_batch_id LIKE :p"), {"p": f"{target_session_id[:20]}%"}).scalar() or 0
+                qual_c = db.execute(text("SELECT count(*) FROM serialized_quality_inspections WHERE ingestion_batch_id LIKE :p"), {"p": f"{target_session_id[:20]}%"}).scalar() or 0
+                verified_count = cost_c + prod_c + qual_c
+            msg = f"Investigation package is already committed to consolidated company records ({verified_count:,} records verified in Global Store with {data_origin} provenance)."
         else:
             msg = f"Investigation package successfully approved and consolidated ({total_promoted:,} records promoted with {data_origin} provenance)."
 

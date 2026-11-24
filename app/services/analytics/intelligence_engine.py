@@ -29,6 +29,14 @@ from app.models.real_datasets import (
 logger = logging.getLogger("manufacturing_cost_agent.analytics.intelligence_engine")
 
 
+def _is_all_periods(p: Any) -> bool:
+    """Safely determines if reporting period represents all available periods."""
+    if p is None:
+        return True
+    s = str(p).strip().upper()
+    return s in ("", "ALL", "ALL AVAILABLE PERIODS", "ALL PERIODS", "ALL_PERIODS", "ALL AVAILABLE", "NONE")
+
+
 class ManufacturingIntelligenceEngine:
     """Enterprise-grade manufacturing intelligence and variance decomposition engine."""
 
@@ -488,7 +496,7 @@ class ManufacturingIntelligenceEngine:
             func.sum(LineCostBatch.scrap_rework_cost_inr).label("scr_cost"),
         ).filter(LineCostBatch.is_synthetic == False)
 
-        if period_code and period_code != "ALL":
+        if period_code and not _is_all_periods(period_code):
             p_q = p_q.filter(func.to_char(LineCostBatch.posting_ts, "YYYY-MM") == period_code)
         if plant_code and plant_code != "All Plants":
             p_q = p_q.filter(LineCostBatch.plant_code == plant_code)
@@ -532,7 +540,7 @@ class ManufacturingIntelligenceEngine:
                 HourlyProductionLog.is_synthetic == False,
                 HourlyProductionLog.product_code == p_code,
             )
-            if period_code and period_code != "ALL":
+            if period_code and not _is_all_periods(period_code):
                 y_q = y_q.filter(func.to_char(HourlyProductionLog.event_date, "YYYY-MM") == period_code)
             if plant_code and plant_code != "All Plants":
                 y_q = y_q.filter(HourlyProductionLog.plant_code == plant_code)
@@ -691,7 +699,7 @@ class ManufacturingIntelligenceEngine:
         elif is_synth_period:
             prod_q = prod_q.filter(LineCostBatch.is_synthetic == True)
 
-        if period_code and period_code != "ALL":
+        if period_code and not _is_all_periods(period_code):
             prod_q = prod_q.filter(func.to_char(LineCostBatch.posting_ts, "YYYY-MM") == period_code)
         if product_code and product_code != "All Products":
             prod_q = prod_q.filter(LineCostBatch.product_code == product_code)
@@ -905,7 +913,7 @@ class ManufacturingIntelligenceEngine:
             func.sum(HourlyProductionLog.downtime_min).label("downtime"),
         ).filter(HourlyProductionLog.is_synthetic == False)
 
-        if period_code and period_code != "ALL":
+        if period_code and not _is_all_periods(period_code):
             l_q = l_q.filter(func.to_char(HourlyProductionLog.event_date, "YYYY-MM") == period_code)
         if plant_code and plant_code != "All Plants":
             l_q = l_q.filter(HourlyProductionLog.plant_code == plant_code)

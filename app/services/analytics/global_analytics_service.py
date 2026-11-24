@@ -38,6 +38,14 @@ from app.services.analytics.intelligence_engine import ManufacturingIntelligence
 logger = logging.getLogger("manufacturing_cost_agent.analytics.global_analytics_service")
 
 
+def _is_all_periods(p: Any) -> bool:
+    """Safely determines if reporting period represents all available periods."""
+    if p is None:
+        return True
+    s = str(p).strip().upper()
+    return s in ("", "ALL", "ALL AVAILABLE PERIODS", "ALL PERIODS", "ALL_PERIODS", "ALL AVAILABLE", "NONE")
+
+
 class GlobalAnalyticsService:
     """Provides reusable, deterministic manufacturing analytics over committed facts."""
 
@@ -116,7 +124,7 @@ class GlobalAnalyticsService:
         elif is_synth_period:
             cost_q = cost_q.filter(LineCostBatch.is_synthetic == True)
 
-        if period_code and period_code != "ALL":
+        if period_code and not _is_all_periods(period_code):
             cost_q = cost_q.filter(func.to_char(LineCostBatch.posting_ts, "YYYY-MM") == period_code)
         if plant_code and plant_code != "All Plants":
             cost_q = cost_q.filter(LineCostBatch.plant_code == plant_code)
@@ -149,7 +157,7 @@ class GlobalAnalyticsService:
         elif is_synth_period:
             prod_q = prod_q.filter(HourlyProductionLog.is_synthetic == True)
 
-        if period_code and period_code != "ALL":
+        if period_code and not _is_all_periods(period_code):
             prod_q = prod_q.filter(func.to_char(HourlyProductionLog.event_date, "YYYY-MM") == period_code)
         if plant_code and plant_code != "All Plants":
             prod_q = prod_q.filter(HourlyProductionLog.plant_code == plant_code)
@@ -176,7 +184,7 @@ class GlobalAnalyticsService:
         elif is_synth_period:
             matched_good_q = matched_good_q.filter(HourlyProductionLog.is_synthetic == True)
 
-        if period_code and period_code != "ALL":
+        if period_code and not _is_all_periods(period_code):
             matched_good_q = matched_good_q.filter(func.to_char(HourlyProductionLog.event_date, "YYYY-MM") == period_code)
         if plant_code and plant_code != "All Plants":
             matched_good_q = matched_good_q.filter(HourlyProductionLog.plant_code == plant_code)
@@ -201,7 +209,7 @@ class GlobalAnalyticsService:
         elif is_synth_period:
             uncosted_q = uncosted_q.filter(HourlyProductionLog.is_synthetic == True)
 
-        if period_code and period_code != "ALL":
+        if period_code and not _is_all_periods(period_code):
             uncosted_q = uncosted_q.filter(func.to_char(HourlyProductionLog.event_date, "YYYY-MM") == period_code)
         if plant_code and plant_code != "All Plants":
             uncosted_q = uncosted_q.filter(HourlyProductionLog.plant_code == plant_code)
@@ -316,7 +324,7 @@ class GlobalAnalyticsService:
         elif is_synth_period:
             p_q = p_q.filter(LineCostBatch.is_synthetic == True)
 
-        if period_code and period_code != "ALL":
+        if period_code and not _is_all_periods(period_code):
             p_q = p_q.filter(func.to_char(LineCostBatch.posting_ts, "YYYY-MM") == period_code)
         if plant_code and plant_code != "All Plants":
             p_q = p_q.filter(LineCostBatch.plant_code == plant_code)
@@ -342,7 +350,7 @@ class GlobalAnalyticsService:
             elif is_synth_period:
                 y_q = y_q.filter(HourlyProductionLog.is_synthetic == True)
 
-            if period_code and period_code != "ALL":
+            if period_code and not _is_all_periods(period_code):
                 y_q = y_q.filter(func.to_char(HourlyProductionLog.event_date, "YYYY-MM") == period_code)
             if plant_code and plant_code != "All Plants":
                 y_q = y_q.filter(HourlyProductionLog.plant_code == plant_code)
@@ -499,7 +507,7 @@ class GlobalAnalyticsService:
         elif is_synth_period:
             l_q = l_q.filter(HourlyProductionLog.is_synthetic == True)
 
-        if period_code and period_code != "ALL":
+        if period_code and not _is_all_periods(period_code):
             l_q = l_q.filter(func.to_char(HourlyProductionLog.event_date, "YYYY-MM") == period_code)
         if plant_code and plant_code != "All Plants":
             l_q = l_q.filter(HourlyProductionLog.plant_code == plant_code)

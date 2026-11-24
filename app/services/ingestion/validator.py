@@ -142,14 +142,26 @@ class DataValidator:
 
     @staticmethod
     def validate_quality_inspection_staged(session: Session, batch_id: str) -> dict[str, Any]:
-        """Validates stg_quality_inspection for the given batch."""
-        # 1. Flag invalid results or null identifiers
+        """Validates stg_quality_inspection for the given batch. Quarantines records with missing timestamps, products or IDs."""
+        # 1. Flag records with missing required fields or invalid result/disposition
         sql_invalid = text("""
             UPDATE stg_quality_inspection
             SET validation_status = 'INVALID',
-                validation_error = 'Invalid result, disposition, or missing serial/inspection_id'
+                validation_error = CASE
+                    WHEN inspection_ts IS NULL THEN 'Missing or unparseable inspection timestamp (inspection_ts)'
+                    WHEN product_id IS NULL THEN 'Missing product identifier (product_id / sku_id)'
+                    WHEN inspection_id IS NULL THEN 'Missing inspection_id'
+                    WHEN serial_number IS NULL THEN 'Missing serial_number'
+                    WHEN plant_id IS NULL THEN 'Missing plant_id'
+                    WHEN line_id IS NULL THEN 'Missing line_id'
+                    WHEN result NOT IN ('PASS', 'FAIL') THEN 'Invalid inspection result (must be PASS or FAIL)'
+                    WHEN disposition NOT IN ('RELEASE', 'REWORK', 'HOLD', 'SCRAP') THEN 'Invalid disposition'
+                    ELSE 'Invalid quality inspection record'
+                END
             WHERE ingestion_batch_id = :b_id
               AND (
+                  inspection_ts IS NULL OR
+                  product_id IS NULL OR
                   inspection_id IS NULL OR
                   serial_number IS NULL OR
                   plant_id IS NULL OR
@@ -163,7 +175,8 @@ class DataValidator:
         # 2. Mark remaining as VALID
         sql_valid = text("""
             UPDATE stg_quality_inspection
-            SET validation_status = 'VALID'
+            SET validation_status = 'VALID',
+                validation_error = NULL
             WHERE ingestion_batch_id = :b_id
               AND validation_status = 'PENDING'
         """)

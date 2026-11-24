@@ -45,6 +45,7 @@ class PromotionService:
         batch_id: str,
         approver_identifier: str = "system",
         correction_reason: str = "Standard Batch Ingestion",
+        auto_commit: bool = True,
     ) -> dict[str, Any]:
         """
         Executes atomic promotion of all valid staged records for this batch.
@@ -202,6 +203,7 @@ class PromotionService:
                     scrap_rework_cost_inr = EXCLUDED.scrap_rework_cost_inr,
                     total_direct_cost_inr = EXCLUDED.total_direct_cost_inr,
                     ingestion_batch_id = EXCLUDED.ingestion_batch_id,
+                    is_synthetic = EXCLUDED.is_synthetic,
                     version_num = line_cost_batches.version_num + 1,
                     updated_at = NOW()
                 WHERE line_cost_batches.material_cost_inr != EXCLUDED.material_cost_inr
@@ -210,6 +212,7 @@ class PromotionService:
                    OR line_cost_batches.energy_cost_inr != EXCLUDED.energy_cost_inr
                    OR line_cost_batches.scrap_rework_cost_inr != EXCLUDED.scrap_rework_cost_inr
                    OR line_cost_batches.produced_qty != EXCLUDED.produced_qty
+                   OR line_cost_batches.is_synthetic != EXCLUDED.is_synthetic
             """)
             res_cost = session.execute(sql_cost, {"b_id": batch_id, "is_synth": is_synthetic})
             results["promoted_line_cost_batches"] = res_cost.rowcount or 0
@@ -287,12 +290,14 @@ class PromotionService:
                     downtime_min = EXCLUDED.downtime_min,
                     costing_status = EXCLUDED.costing_status,
                     ingestion_batch_id = EXCLUDED.ingestion_batch_id,
+                    is_synthetic = EXCLUDED.is_synthetic,
                     version_num = hourly_production_logs.version_num + 1,
                     updated_at = NOW()
                 WHERE hourly_production_logs.actual_qty != EXCLUDED.actual_qty
                    OR hourly_production_logs.good_qty != EXCLUDED.good_qty
                    OR hourly_production_logs.reject_qty != EXCLUDED.reject_qty
                    OR hourly_production_logs.costing_status != EXCLUDED.costing_status
+                   OR hourly_production_logs.is_synthetic != EXCLUDED.is_synthetic
             """)
             res_prod = session.execute(sql_prod, {"b_id": batch_id, "is_synth": is_synthetic})
             results["promoted_hourly_production_logs"] = res_prod.rowcount or 0
@@ -361,14 +366,17 @@ class PromotionService:
                 FROM stg_quality_inspection s
                 WHERE s.ingestion_batch_id = CAST(:b_id AS VARCHAR(36))
                   AND s.validation_status = 'VALID'
+                  AND s.inspection_ts IS NOT NULL
                 ON CONFLICT (inspection_id) DO UPDATE SET
                     result = EXCLUDED.result,
                     disposition = EXCLUDED.disposition,
                     defect_code = EXCLUDED.defect_code,
+                    is_synthetic = EXCLUDED.is_synthetic,
                     version_num = serialized_quality_inspections.version_num + 1,
                     updated_at = NOW()
                 WHERE serialized_quality_inspections.disposition != EXCLUDED.disposition
                    OR serialized_quality_inspections.result != EXCLUDED.result
+                   OR serialized_quality_inspections.is_synthetic != EXCLUDED.is_synthetic
             """)
             res_q = session.execute(sql_q, {"b_id": batch_id, "is_synth": is_synthetic})
             results["promoted_quality_inspections"] = res_q.rowcount or 0
@@ -559,10 +567,13 @@ class PromotionService:
                 ON CONFLICT (consumption_record_id) DO UPDATE SET
                     net_consumed_quantity = EXCLUDED.net_consumed_quantity,
                     consumed_value_inr = EXCLUDED.consumed_value_inr,
+                    is_synthetic = EXCLUDED.is_synthetic,
+                    data_origin = EXCLUDED.data_origin,
                     version_num = material_consumption_records.version_num + 1,
                     updated_at = NOW()
                 WHERE material_consumption_records.consumed_value_inr != EXCLUDED.consumed_value_inr
                    OR material_consumption_records.net_consumed_quantity != EXCLUDED.net_consumed_quantity
+                   OR material_consumption_records.is_synthetic != EXCLUDED.is_synthetic
             """)
             res_cons = session.execute(sql_cons, {"b_id": batch_id, "is_synth": is_synthetic, "data_origin": data_origin})
             results["promoted_material_consumption"] = res_cons.rowcount or 0
@@ -647,7 +658,7 @@ class PromotionService:
 
             # Update batch and registry status
             batch.processing_status = "COMMITTED"
-            batch.valid_rows = total_promoted
+            batch.valid_rows = total_promoted if total_promoted > 0 else (batch.total_rows or total_promoted)
             
             sql_reg = text("""
                 UPDATE ingestion_file_registry
@@ -718,20 +729,25 @@ class PromotionService:
             )
             session.add(audit_ev)
 
-            session.commit()
-            try:
-                from app.services.analytics.global_date_service import GlobalDateRangeService
-                GlobalDateRangeService.invalidate_cache()
-            except Exception:
-                pass
+            if auto_commit:
+                session.commit()
+                try:
+                    from app.services.analytics.global_date_service import GlobalDateRangeService
+                    GlobalDateRangeService.invalidate_cache()
+                except Exception:
+                    pass
+            else:
+                session.flush()
+
             logger.info(f"Successfully promoted batch {batch_id}: {results}")
             return results
 
         except Exception as e:
-            session.rollback()
-            batch.processing_status = "FAILED"
-            batch.error_summary = str(e)
-            session.commit()
+            if auto_commit:
+                session.rollback()
+                batch.processing_status = "FAILED"
+                batch.error_summary = str(e)
+                session.commit()
             logger.error(f"Promotion failed for batch {batch_id}: {e}", exc_info=True)
             raise e
 
@@ -742,11 +758,12 @@ class PromotionService:
         session_id: str,
         approver_identifier: str = "lead_investigator",
         correction_reason: str = "Investigation Consolidation Approval",
+        data_origin: Optional[str] = None,
     ) -> dict[str, Any]:
         """
-        Promotes an entire multi-dataset upload session (e.g. November synthetic session)
+        Promotes an entire multi-dataset upload session
         atomically across all seven dataset families.
-        Stages records if needed, executes validation, and promotes with SYNTHETIC_TEST provenance.
+        Stages records if needed, executes validation, and promotes with appropriate provenance.
         """
         from app.services.ingestion.session_store import SessionDataStore
         from app.services.ingestion.staging_loader import StagingLoader
@@ -824,8 +841,27 @@ class PromotionService:
         }
 
         try:
-            sess_info = SessionDataStore.get_session_info(session_id) or {}
-            session_data_origin = sess_info.get("data_origin", "SYNTHETIC_TEST")
+            if not data_origin:
+                from app.models.agent_records import InvestigationReportRecord
+                rec = session.query(InvestigationReportRecord).filter(
+                    (InvestigationReportRecord.source_batch_id == session_id) |
+                    (InvestigationReportRecord.inspection_id == session_id) |
+                    (InvestigationReportRecord.report_id == session_id)
+                ).first()
+                if rec and rec.data_origin:
+                    session_data_origin = rec.data_origin
+                else:
+                    sess_info = SessionDataStore.get_session_info(session_id) or {}
+                    session_data_origin = sess_info.get("data_origin", "REAL")
+            else:
+                session_data_origin = data_origin
+
+            is_session_synth = (session_data_origin in ("SYNTHETIC_TEST", "SYNTHETIC", "DEMO"))
+
+            # Phase 1: Staging & Validation
+            # Prepares and validates all available datasets in staging tables with clean isolation
+            batches_to_promote = []
+            import inspect
 
             for dtype, (loader_func, validator_func, stg_table, aliases) in dataset_handlers.items():
                 ds_obj = None
@@ -841,7 +877,11 @@ class PromotionService:
 
                 is_synth = ds_obj.get("is_synthetic")
                 if is_synth is None:
-                    is_synth = (session_data_origin != "BASELINE")
+                    ds_orig = ds_obj.get("data_origin")
+                    if ds_orig:
+                        is_synth = (ds_orig in ("SYNTHETIC_TEST", "SYNTHETIC", "DEMO"))
+                    else:
+                        is_synth = is_session_synth
 
                 batch_key = f"{session_id[:20]}_{dtype[:14]}"
                 batch = session.query(ImportBatch).filter_by(id=batch_key).first()
@@ -859,22 +899,33 @@ class PromotionService:
                     session.flush()
                 else:
                     batch.is_synthetic = is_synth
+                    batch.total_rows = len(rows)
 
-                staged_count = session.execute(
-                    text(f"SELECT count(*) FROM {stg_table} WHERE ingestion_batch_id = :b_id"),
+                # Clean previous staging rows for this batch so retry or updated mapping takes effect
+                session.execute(
+                    text(f"DELETE FROM {stg_table} WHERE ingestion_batch_id = :b_id"),
                     {"b_id": batch.id}
-                ).scalar() or 0
+                )
 
-                if staged_count == 0:
+                col_mapping = ds_obj.get("column_mapping")
+                if "column_mapping" in inspect.signature(loader_func).parameters:
+                    loader_func(session, batch.id, f"sess-{session_id}-{dtype}", rows, column_mapping=col_mapping)
+                else:
                     loader_func(session, batch.id, f"sess-{session_id}-{dtype}", rows)
 
                 validator_func(session, batch.id)
+                batches_to_promote.append((batch.id, dtype))
 
+            session.commit()
+
+            # Phase 2: Atomic Operational Fact Promotion across all staged batches
+            for batch_id_to_promote, _ in batches_to_promote:
                 batch_res = cls.promote_batch(
                     session=session,
-                    batch_id=batch.id,
+                    batch_id=batch_id_to_promote,
                     approver_identifier=approver_identifier,
                     correction_reason=correction_reason,
+                    auto_commit=False,
                 )
                 for k, v in batch_res.items():
                     results[k] = results.get(k, 0) + v
@@ -889,7 +940,7 @@ class PromotionService:
                 action="COMMIT",
                 change_summary=(
                     f"Consolidated dataset package {session_id}: {total_promoted:,} operational facts "
-                    f"across 7 dataset families promoted into Global Manufacturing Store."
+                    f"across {len(batches_to_promote)} dataset families promoted into Global Manufacturing Store."
                 )
             )
             session.add(session_audit)
@@ -905,5 +956,15 @@ class PromotionService:
 
         except Exception as e:
             session.rollback()
+            try:
+                for dtype in dataset_handlers:
+                    batch_key = f"{session_id[:20]}_{dtype[:14]}"
+                    b = session.query(ImportBatch).filter_by(id=batch_key).first()
+                    if b and b.processing_status != "COMMITTED":
+                        b.processing_status = "FAILED"
+                        b.error_summary = str(e)
+                session.commit()
+            except Exception:
+                pass
             logger.error(f"Failed promoting session {session_id}: {e}", exc_info=True)
             raise e
