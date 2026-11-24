@@ -1014,6 +1014,8 @@ class InvestigationQueryService:
             )
             return DynamicInvestigationResponse(**resp_dict)
 
+        from app.services.analytics.intelligence_engine import ManufacturingIntelligenceEngine
+
         # Month extraction from question
         month_regex = r"\b(january|jan|february|feb|march|mar|april|apr|may|june|jun|july|jul|august|aug|september|sept|sep|october|oct|november|nov|december|dec)\b(?:\s+(\d{4}))?"
         month_hits: list[str] = []
@@ -2047,6 +2049,12 @@ class InvestigationQueryService:
                 analytics_result = ManufacturingAnalytics.analyze_bom_consumption(datasets, filters)
             elif intent == "PRODUCTION_QUALITY":
                 analytics_result = ManufacturingAnalytics.analyze_production_quality(datasets, filters)
+                if not analytics_result or "error" in analytics_result:
+                    analytics_result = ManufacturingIntelligenceEngine.calculate_production_quality_intelligence(
+                        db=db,
+                        period_code=norm_period,
+                        plant_code=request.plant_code,
+                    )
             elif intent == "SCRAP_REWORK":
                 analytics_result = ManufacturingAnalytics.analyze_scrap_rework(datasets, filters)
             elif intent == "PRODUCT_COST":
@@ -2420,17 +2428,18 @@ class InvestigationQueryService:
                     },
                 }
             else:
-                highest = analytics.get("highest_rejection_line", {})
+                highest = (analytics.get("highest_rejection_line") if isinstance(analytics, dict) else None) or {}
+                lines_list = (analytics.get("line_rankings") if isinstance(analytics, dict) else None) or []
                 return {
                     "intent": intent,
                     "analysis_type": "PRODUCTION_AND_QUALITY",
-                    "total_produced": format_units(analytics.get("total_produced", 0)),
-                    "total_good": format_units(analytics.get("total_good", 0)),
-                    "total_rejected": format_units(analytics.get("total_rejected", 0)),
-                    "overall_yield": f"{analytics.get('overall_yield_pct', 0)}%",
-                    "overall_rejection_rate": f"{analytics.get('overall_rejection_rate_pct', 0)}%",
+                    "total_produced": format_units(analytics.get("total_produced", 0) if isinstance(analytics, dict) else 0),
+                    "total_good": format_units(analytics.get("total_good", 0) if isinstance(analytics, dict) else 0),
+                    "total_rejected": format_units(analytics.get("total_rejected", 0) if isinstance(analytics, dict) else 0),
+                    "overall_yield": f"{analytics.get('overall_yield_pct', 0) if isinstance(analytics, dict) else 0}%",
+                    "overall_rejection_rate": f"{analytics.get('overall_rejection_rate_pct', 0) if isinstance(analytics, dict) else 0}%",
                     "highest_rejection_line": {
-                        "line_id": highest.get("line_id"),
+                        "line_id": highest.get("line_id", "N/A"),
                         "rejection_rate": f"{highest.get('rejection_rate_pct', 0)}%",
                         "yield": f"{highest.get('yield_pct', 0)}%",
                         "actual_produced": format_units(highest.get("actual_qty", 0)),
@@ -2438,11 +2447,11 @@ class InvestigationQueryService:
                     },
                     "line_rankings": [
                         {
-                            "line_id": l.get("line_id"),
-                            "rejection_rate": f"{l.get('rejection_rate_pct', 0)}%",
-                            "yield": f"{l.get('yield_pct', 0)}%",
+                            "line_id": l.get("line_id", "N/A") if isinstance(l, dict) else str(l),
+                            "rejection_rate": f"{l.get('rejection_rate_pct', 0)}%" if isinstance(l, dict) else "0%",
+                            "yield": f"{l.get('yield_pct', 0)}%" if isinstance(l, dict) else "0%",
                         }
-                        for l in analytics.get("line_rankings", [])
+                        for l in lines_list if isinstance(l, dict)
                     ],
                 }
 
@@ -2801,28 +2810,70 @@ class InvestigationQueryService:
             }
 
         elif intent == "PRODUCTION_QUALITY":
-            highest = analytics.get("highest_rejection_line", {})
-            return {
-                "ai_source": "DETERMINISTIC_ENGINE",
-                "executive_summary": (
-                    f"Production across all lines totaled {format_units(analytics.get('total_produced', 0))} with an overall yield of "
-                    f"{analytics.get('overall_yield_pct', 0)}% and {format_units(analytics.get('total_rejected', 0))} rejected. "
-                    f"The highest rejection rate occurred on Line {highest.get('line_id')} at {highest.get('rejection_rate_pct', 0)}%."
-                ),
-                "key_finding": f"Line {highest.get('line_id')} recorded highest rejection rate ({highest.get('rejection_rate_pct', 0)}%)",
-                "finding_explanation": (
-                    f"Line {highest.get('line_id')} produced {format_units(highest.get('actual_qty', 0))} and rejected {format_units(highest.get('reject_qty', 0))}. "
-                    f"Yield on this line was {highest.get('yield_pct', 0)}% compared to plant benchmark."
-                ),
-                "limitations": [
-                    "Defect severity ratings reflect station inspection criteria and require metallurgical lab confirmation for root cause.",
-                    "Operator shift rotation impact was not cross-indexed against hourly rejection spikes.",
-                ],
-                "recommendations": [
-                    {"action": f"Conduct maintenance inspection of tooling on Line {highest.get('line_id')}", "owner": "Plant Maintenance"},
-                    {"action": "Review station defect pareto during daily production tier meetings", "owner": "Quality Assurance Manager"},
-                ],
-            }
+            if isinstance(analytics, dict) and "factory_summary" in analytics:
+                f_sum = analytics.get("factory_summary") or {}
+                lines = analytics.get("lines") or []
+                worst_line = (max(lines, key=lambda l: l.get("rejection_pct", 0.0)) if lines else {}) or {}
+                w_code = worst_line.get("line_code") or "Unknown"
+                w_rej = worst_line.get("rejection_pct", 0)
+                w_act = worst_line.get("actual_qty", 0)
+                w_rej_qty = worst_line.get("reject_qty", 0)
+                w_yield = worst_line.get("yield_pct", 0)
+                f_prod = f_sum.get("factory_actual_qty", 0)
+                f_yield = f_sum.get("factory_yield_pct", 0)
+                f_rej = f_sum.get("factory_reject_qty", 0)
+                return {
+                    "ai_source": "DETERMINISTIC_ENGINE",
+                    "executive_summary": (
+                        f"Production across all lines totaled {format_units(f_prod)} with an overall yield of "
+                        f"{f_yield}% and {format_units(f_rej)} rejected units. "
+                        f"The highest rejection rate occurred on Line {w_code} at {w_rej}%."
+                    ),
+                    "key_finding": f"Line {w_code} recorded highest rejection rate ({w_rej}%)",
+                    "finding_explanation": (
+                        f"Line {w_code} produced {format_units(w_act)} units and rejected {format_units(w_rej_qty)} units. "
+                        f"Yield on this line was {w_yield}% compared to plant benchmark."
+                    ),
+                    "limitations": [
+                        "Defect severity ratings reflect station inspection criteria and require metallurgical lab confirmation for root cause.",
+                        "Operator shift rotation impact was not cross-indexed against hourly rejection spikes.",
+                    ],
+                    "recommendations": [
+                        {"action": f"Conduct maintenance inspection of tooling on Line {w_code}", "owner": "Plant Maintenance"},
+                        {"action": "Review station defect pareto during daily production tier meetings", "owner": "Quality Assurance Manager"},
+                    ],
+                }
+            else:
+                highest = (analytics.get("highest_rejection_line") if isinstance(analytics, dict) else None) or {}
+                h_line = highest.get('line_id') or "Unknown"
+                h_rej = highest.get('rejection_rate_pct', 0)
+                h_act = highest.get('actual_qty', 0)
+                h_rej_qty = highest.get('reject_qty', 0)
+                h_yield = highest.get('yield_pct', 0)
+                tot_prod = analytics.get('total_produced', 0) if isinstance(analytics, dict) else 0
+                tot_yield = analytics.get('overall_yield_pct', 0) if isinstance(analytics, dict) else 0
+                tot_rej = analytics.get('total_rejected', 0) if isinstance(analytics, dict) else 0
+                return {
+                    "ai_source": "DETERMINISTIC_ENGINE",
+                    "executive_summary": (
+                        f"Production across all lines totaled {format_units(tot_prod)} with an overall yield of "
+                        f"{tot_yield}% and {format_units(tot_rej)} rejected. "
+                        f"The highest rejection rate occurred on Line {h_line} at {h_rej}%."
+                    ),
+                    "key_finding": f"Line {h_line} recorded highest rejection rate ({h_rej}%)",
+                    "finding_explanation": (
+                        f"Line {h_line} produced {format_units(h_act)} and rejected {format_units(h_rej_qty)}. "
+                        f"Yield on this line was {h_yield}% compared to plant benchmark."
+                    ),
+                    "limitations": [
+                        "Defect severity ratings reflect station inspection criteria and require metallurgical lab confirmation for root cause.",
+                        "Operator shift rotation impact was not cross-indexed against hourly rejection spikes.",
+                    ],
+                    "recommendations": [
+                        {"action": f"Conduct maintenance inspection of tooling on Line {h_line}", "owner": "Plant Maintenance"},
+                        {"action": "Review station defect pareto during daily production tier meetings", "owner": "Quality Assurance Manager"},
+                    ],
+                }
 
         elif intent == "SCRAP_REWORK":
             top_def = analytics.get("top_defects", [{}])[0]
@@ -3656,20 +3707,39 @@ class InvestigationQueryService:
             }
 
         elif intent == "PRODUCTION_QUALITY":
-            for l in analytics.get("line_rankings", []):
-                drilldowns.append({
-                    "dimension": f"Line {l.get('line_id')}",
-                    "value": f"{l.get('rejection_rate_pct', 0)}% Rejection",
-                    "secondary": f"Good: {format_units(l.get('good_qty', 0))} / Actual: {format_units(l.get('actual_qty', 0))}",
-                    "tag": f"Yield: {l.get('yield_pct', 0)}%",
-                })
-            highest = analytics.get("highest_rejection_line") or {}
-            financial_impact = {
-                "headline": f"{analytics.get('overall_rejection_rate_pct', 0)}% Overall Rejection",
-                "variance": f"Line {highest.get('line_id', 'N/A')}: {highest.get('rejection_rate_pct', 0)}%",
-                "description": f"{format_units(analytics.get('total_rejected', 0))} total defective units across all lines",
-                "direction": "NEGATIVE",
-            }
+            if isinstance(analytics, dict) and "factory_summary" in analytics:
+                f_sum = analytics.get("factory_summary") or {}
+                lines = analytics.get("lines") or []
+                for l in lines:
+                    drilldowns.append({
+                        "dimension": f"Line {l.get('line_code')}",
+                        "value": f"{l.get('rejection_pct', 0)}% Rejection",
+                        "secondary": f"Good: {format_units(l.get('good_qty', 0))} / Actual: {format_units(l.get('actual_qty', 0))}",
+                        "tag": f"Yield: {l.get('yield_pct', 0)}%",
+                    })
+                worst_line = (max(lines, key=lambda l: l.get("rejection_pct", 0.0)) if lines else {}) or {}
+                financial_impact = {
+                    "headline": f"{f_sum.get('factory_reject_pct', 0)}% Overall Rejection",
+                    "variance": f"Line {worst_line.get('line_code', 'N/A')}: {worst_line.get('rejection_pct', 0)}%",
+                    "description": f"{format_units(f_sum.get('factory_reject_qty', 0))} total defective units across all lines",
+                    "direction": "NEGATIVE",
+                }
+            else:
+                highest = (analytics.get("highest_rejection_line") if isinstance(analytics, dict) else None) or {}
+                lines_list = (analytics.get("line_rankings") if isinstance(analytics, dict) else None) or []
+                for l in lines_list:
+                    drilldowns.append({
+                        "dimension": f"Line {l.get('line_id')}",
+                        "value": f"{l.get('rejection_rate_pct', 0)}% Rejection",
+                        "secondary": f"Good: {format_units(l.get('good_qty', 0))} / Actual: {format_units(l.get('actual_qty', 0))}",
+                        "tag": f"Yield: {l.get('yield_pct', 0)}%",
+                    })
+                financial_impact = {
+                    "headline": f"{analytics.get('overall_rejection_rate_pct', 0) if isinstance(analytics, dict) else 0}% Overall Rejection",
+                    "variance": f"Line {highest.get('line_id', 'N/A')}: {highest.get('rejection_rate_pct', 0)}%",
+                    "description": f"{format_units(analytics.get('total_rejected', 0) if isinstance(analytics, dict) else 0)} total defective units across all lines",
+                    "direction": "NEGATIVE",
+                }
 
         elif intent == "SCRAP_REWORK":
             for d in analytics.get("top_defects", []):

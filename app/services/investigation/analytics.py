@@ -665,6 +665,8 @@ class ManufacturingAnalytics:
         datasets: dict[str, Any],
         filters: Optional[dict[str, Any]] = None,
     ) -> dict[str, Any]:
+        if not datasets or not isinstance(datasets, dict):
+            return {"error": "Missing production datasets"}
         prod_ds = datasets.get("HOURLY_PRODUCTION")
         qual_ds = datasets.get("QUALITY_INSPECTION")
         if not prod_ds:
