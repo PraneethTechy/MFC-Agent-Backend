@@ -144,6 +144,8 @@ class ManufacturingAnalytics:
         datasets: dict[str, Any],
         filters: Optional[dict[str, Any]] = None,
     ) -> dict[str, Any]:
+        if not datasets or not isinstance(datasets, dict):
+            return {"error": "Missing MANUFACTURING_COST dataset in upload session"}
         cost_ds = datasets.get("MANUFACTURING_COST")
         if not cost_ds:
             return {"error": "Missing MANUFACTURING_COST dataset in upload session"}
@@ -400,6 +402,8 @@ class ManufacturingAnalytics:
         datasets: dict[str, Any],
         filters: Optional[dict[str, Any]] = None,
     ) -> dict[str, Any]:
+        if not datasets or not isinstance(datasets, dict):
+            return {"error": "Missing MATERIAL_CONSUMPTION and MATERIAL_PURCHASE datasets"}
         cons_ds = datasets.get("MATERIAL_CONSUMPTION")
         purch_ds = datasets.get("MATERIAL_PURCHASE")
         if not cons_ds and not purch_ds:
@@ -517,6 +521,8 @@ class ManufacturingAnalytics:
         datasets: dict[str, Any],
         filters: Optional[dict[str, Any]] = None,
     ) -> dict[str, Any]:
+        if not datasets or not isinstance(datasets, dict):
+            return {"error": "BOM analysis requires BOM_COMPONENT, MATERIAL_CONSUMPTION, and HOURLY_PRODUCTION"}
         bom_ds = datasets.get("BOM_COMPONENT") or datasets.get("BOM_COMPONENTS")
         cons_ds = datasets.get("MATERIAL_CONSUMPTION")
         prod_ds = datasets.get("HOURLY_PRODUCTION")
@@ -814,6 +820,8 @@ class ManufacturingAnalytics:
         datasets: dict[str, Any],
         filters: Optional[dict[str, Any]] = None,
     ) -> dict[str, Any]:
+        if not datasets or not isinstance(datasets, dict):
+            return {"error": "Missing QUALITY_REWORK_EVENTS dataset"}
         rwk_ds = datasets.get("QUALITY_REWORK_EVENTS")
         if not rwk_ds:
             return {"error": "Missing QUALITY_REWORK_EVENTS dataset"}

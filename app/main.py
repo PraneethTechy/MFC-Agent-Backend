@@ -2451,6 +2451,118 @@ def get_analytics_recommendations(
     return GlobalAnalyticsService.get_recommendations(db, period_code, plant_code, product_code)
 
 
+@app.get("/api/analytics/production-progress-heatmap", tags=["Global Analytics"])
+def get_production_progress_heatmap(
+    db: Session = Depends(get_db),
+):
+    """
+    Dynamically discovers committed reporting periods and calculates line-by-line
+    actual throughput, good units, and assembly yield percentage directly from
+    authoritative HourlyProductionLog facts in Neon PostgreSQL.
+    """
+    if not db:
+        raise HTTPException(status_code=503, detail="Manufacturing database is unavailable.")
+    try:
+        from .models.real_datasets import HourlyProductionLog
+        from sqlalchemy import func
+
+        # 1. Dynamically discover real periods
+        months_raw = db.query(
+            func.to_char(HourlyProductionLog.event_date, "YYYY-MM").label("month")
+        ).filter(HourlyProductionLog.is_synthetic == False).distinct().order_by("month").all()
+        periods = [m[0] for m in months_raw if m[0]]
+
+        # Period label formatter (e.g. '2026-08' -> 'Aug 2026 Actual', latest is 'MTD' if current month)
+        period_defs = []
+        for i, p in enumerate(periods):
+            m_dt = dt.datetime.strptime(p, "%Y-%m")
+            is_latest = (i == len(periods) - 1)
+            period_defs.append({
+                "period_code": p,
+                "label": m_dt.strftime("%b %Y"),
+                "status_suffix": "MTD" if is_latest else "Actual",
+            })
+
+        # 2. Query line-by-line facts grouped by month
+        grouped = db.query(
+            HourlyProductionLog.plant_code,
+            HourlyProductionLog.line_code,
+            func.to_char(HourlyProductionLog.event_date, "YYYY-MM").label("month"),
+            func.sum(HourlyProductionLog.actual_qty).label("actual_qty"),
+            func.sum(HourlyProductionLog.good_qty).label("good_qty"),
+            func.sum(HourlyProductionLog.reject_qty).label("reject_qty"),
+        ).filter(HourlyProductionLog.is_synthetic == False).group_by(
+            HourlyProductionLog.plant_code,
+            HourlyProductionLog.line_code,
+            "month"
+        ).all()
+
+        # Map to display lines
+        line_mappings = [
+            {"plant_code": "IN-TN-01", "line_code": "SMT-L1", "displayName": "Plant A - Line 1", "plant": "Plant A", "line": "Line 1", "dotColor": "bg-emerald-500"},
+            {"plant_code": "IN-TN-01", "line_code": "FAL-L1", "displayName": "Plant A - Line 2", "plant": "Plant A", "line": "Line 2", "dotColor": "bg-blue-500"},
+            {"plant_code": "IN-KA-01", "line_code": "SMT-L2", "displayName": "Plant B - Line 1", "plant": "Plant B", "line": "Line 1", "dotColor": "bg-emerald-500"},
+            {"plant_code": "IN-KA-01", "line_code": "FAL-L2", "displayName": "Plant B - Line 2", "plant": "Plant B", "line": "Line 2", "dotColor": "bg-amber-500"},
+        ]
+
+        data_by_line_month = {}
+        for r in grouped:
+            k = (r.plant_code, r.line_code, r.month)
+            act = float(r.actual_qty or 0.0)
+            good = float(r.good_qty or 0.0)
+            y_pct = round((good / act * 100.0), 1) if act > 0 else 0.0
+            data_by_line_month[k] = {
+                "actual_qty": act,
+                "good_qty": good,
+                "yield_pct": y_pct,
+            }
+
+        rows = []
+        for lmap in line_mappings:
+            tot_units = 0.0
+            monthly_data = {}
+            for p in periods:
+                entry = data_by_line_month.get((lmap["plant_code"], lmap["line_code"], p))
+                if entry:
+                    tot_units += entry["actual_qty"]
+                    y = entry["yield_pct"]
+                    tier = "high" if y >= 98.5 else ("mid" if y >= 97.5 else "low")
+                    monthly_data[p] = {
+                        "yield_pct": f"{y:.1f}%",
+                        "yield_num": y,
+                        "units": f"{int(entry['actual_qty']):,}",
+                        "tier": tier,
+                    }
+                else:
+                    monthly_data[p] = {
+                        "yield_pct": "N/A",
+                        "yield_num": None,
+                        "units": "—",
+                        "tier": "none",
+                    }
+
+            rows.append({
+                "plant": lmap["plant"],
+                "line": lmap["line"],
+                "lineFull": lmap["displayName"],
+                "totalUnits": f"{int(tot_units):,} units" if tot_units > 0 else "—",
+                "dotColor": lmap["dotColor"],
+                "target": "≥ 98.5%",
+                "months": monthly_data,
+            })
+
+        return {
+            "status": "SUCCESS",
+            "data_source": "Neon PostgreSQL 16 (Authoritative Global Store)",
+            "periods": period_defs,
+            "target_threshold": "≥ 98.5%",
+            "rows": rows,
+        }
+    except Exception as exc:
+        logger.error("Error generating dynamic production yield heatmap: %s", exc)
+        raise HTTPException(status_code=500, detail="Failed to calculate production progress heatmap.")
+
+
 # -----------------------------------------------------------------------------
 # Data Connectors Endpoints
 # -----------------------------------------------------------------------------

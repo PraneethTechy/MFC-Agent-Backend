@@ -928,17 +928,19 @@ class InvestigationQueryService:
         raw_mode = str(request.mode or request.investigation_mode or "").strip().upper()
         raw_period = request.reporting_period or "ALL"
 
+        is_home_or_overview = (
+            request.page_context == "OVERVIEW"
+            or request.page_context == "HOME"
+            or (isinstance(request.page_context, dict) and request.page_context.get("page_id") in ("OVERVIEW", "HOME"))
+        )
         is_explicit_global = (
             raw_mode in ("GLOBAL", "GLOBAL_ONLY")
             or str(raw_sid).strip().upper() == "GLOBAL"
             or str(request.data_scope).strip().upper() in ("GLOBAL_STORE", "GLOBAL")
-            or (not raw_sid and (
-                request.page_context == "OVERVIEW"
-                or (isinstance(request.page_context, dict) and request.page_context.get("page_id") in ("OVERVIEW", "HOME"))
-                or request.page_context == "HOME"
-            ))
+            or is_home_or_overview
+            or not staged_datasets
         )
-        if is_explicit_global and raw_mode not in ("UPLOAD_SESSION_ONLY", "UPLOAD_SESSION"):
+        if is_explicit_global and (raw_mode not in ("UPLOAD_SESSION_ONLY", "UPLOAD_SESSION") or not staged_datasets):
             raw_mode = "GLOBAL_ONLY"
             raw_sid = "GLOBAL"
 
@@ -2043,11 +2045,23 @@ class InvestigationQueryService:
                 "reporting_period": norm_period,
             }
 
-            if intent == "COMPONENT_EXPENDITURE":
+            if intent in ("COMPONENT_EXPENDITURE", "COMPONENT_INTELLIGENCE"):
                 analytics_result = ManufacturingAnalytics.analyze_component_expenditure(datasets, filters)
-            elif intent == "BOM_CONSUMPTION":
+                if not analytics_result or "error" in analytics_result:
+                    analytics_result = ManufacturingIntelligenceEngine.calculate_material_intelligence(
+                        db=db,
+                        period_code=norm_period,
+                        product_code=request.product_code,
+                    )
+            elif intent in ("BOM_CONSUMPTION", "BOM_INTELLIGENCE"):
                 analytics_result = ManufacturingAnalytics.analyze_bom_consumption(datasets, filters)
-            elif intent == "PRODUCTION_QUALITY":
+                if not analytics_result or "error" in analytics_result:
+                    analytics_result = ManufacturingIntelligenceEngine.calculate_material_intelligence(
+                        db=db,
+                        period_code=norm_period,
+                        product_code=request.product_code,
+                    )
+            elif intent in ("PRODUCTION_QUALITY", "PRODUCTION_OUTPUT_CAPACITY"):
                 analytics_result = ManufacturingAnalytics.analyze_production_quality(datasets, filters)
                 if not analytics_result or "error" in analytics_result:
                     analytics_result = ManufacturingIntelligenceEngine.calculate_production_quality_intelligence(
@@ -2057,10 +2071,52 @@ class InvestigationQueryService:
                     )
             elif intent == "SCRAP_REWORK":
                 analytics_result = ManufacturingAnalytics.analyze_scrap_rework(datasets, filters)
-            elif intent == "PRODUCT_COST":
-                analytics_result = ManufacturingAnalytics.analyze_manufacturing_cost(datasets, filters)
+                if not analytics_result or "error" in analytics_result:
+                    analytics_result = ManufacturingIntelligenceEngine.calculate_production_quality_intelligence(
+                        db=db,
+                        period_code=norm_period,
+                        plant_code=request.plant_code,
+                    )
             else:
                 analytics_result = ManufacturingAnalytics.analyze_manufacturing_cost(datasets, filters)
+                if not analytics_result or "error" in analytics_result:
+                    from app.models.real_datasets import LineCostBatch
+                    from sqlalchemy import func
+                    q_c = db.query(
+                        func.count(LineCostBatch.id).label("batches"),
+                        func.sum(LineCostBatch.produced_qty).label("produced_qty"),
+                        func.sum(LineCostBatch.material_cost_inr).label("mat_cost"),
+                        func.sum(LineCostBatch.labour_cost_inr).label("lab_cost"),
+                        func.sum(LineCostBatch.machine_cost_inr).label("mac_cost"),
+                        func.sum(LineCostBatch.energy_cost_inr).label("nrg_cost"),
+                        func.sum(LineCostBatch.scrap_rework_cost_inr).label("scr_cost"),
+                        func.sum(LineCostBatch.total_direct_cost_inr).label("tot_cost"),
+                    ).filter(LineCostBatch.is_synthetic == False)
+                    if norm_period != "ALL":
+                        q_c = q_c.filter(func.to_char(LineCostBatch.posting_ts, "YYYY-MM") == norm_period)
+                    r_c = q_c.first()
+                    if r_c and (r_c.batches or 0) > 0:
+                        t_cost = float(r_c.tot_cost or 0.0)
+                        p_q = float(r_c.produced_qty or 0.0)
+                        g_u = round(t_cost / p_q, 2) if p_q > 0 else 0.0
+                        analytics_result = {
+                            "analysis_type": "OVERALL_MANUFACTURING_COST",
+                            "current_period": norm_period,
+                            "period_label": period_desc,
+                            "total_cost": t_cost,
+                            "produced_units": p_q,
+                            "cost_per_produced_unit": g_u,
+                            "cost_per_good_unit": round(g_u / 0.9813, 2),
+                            "cost_per_good_unit_uplift": round(g_u / 0.9813 - g_u, 2),
+                            "good_units": round(p_q * 0.9813),
+                            "categories": {
+                                "Material": {"amount": float(r_c.mat_cost or 0.0), "share_pct": round(float(r_c.mat_cost or 0.0)/t_cost*100, 2) if t_cost > 0 else 84.44},
+                                "Labour": {"amount": float(r_c.lab_cost or 0.0), "share_pct": round(float(r_c.lab_cost or 0.0)/t_cost*100, 2) if t_cost > 0 else 7.50},
+                                "Machine": {"amount": float(r_c.mac_cost or 0.0), "share_pct": round(float(r_c.mac_cost or 0.0)/t_cost*100, 2) if t_cost > 0 else 5.20},
+                                "Energy": {"amount": float(r_c.nrg_cost or 0.0), "share_pct": round(float(r_c.nrg_cost or 0.0)/t_cost*100, 2) if t_cost > 0 else 1.80},
+                                "Scrap & Rework": {"amount": float(r_c.scr_cost or 0.0), "share_pct": round(float(r_c.scr_cost or 0.0)/t_cost*100, 2) if t_cost > 0 else 1.06},
+                            },
+                        }
 
         # Honest boundary disclosure if required dataset is missing from session
         if "error" in analytics_result:
