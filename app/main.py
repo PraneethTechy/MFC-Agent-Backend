@@ -41,6 +41,7 @@ from .services.validation import validation_service
 from .services.synthetic_generator import synthetic_generator
 from .agent import run_agent
 from .models.core import Conversation, Message
+from .models.agent_records import InvestigationReportRecord
 from .services.cost_engine import (
     AnalyticalScopeRequest,
     DataValidationResult,
